@@ -112,6 +112,12 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	 * bean instance: to be appended to the fully-qualified bean class name,
 	 * e.g. "com.mypackage.MyClass.ORIGINAL", in order to enforce the given instance
 	 * to be returned, i.e. no proxies etc.
+	 *
+	 * 初始化现有bean实例时，“原始实例”约定的后缀:被附加到完全限定bean类名之后，例如。
+	 * “com.mypackage.MyClass。
+	 * “ORIGINAL”，以便强制返回给定的实例，即没有代理等
+	 *  //该属性是一种约定俗成的用法：以类全限定名+.ORIGINAL 作为Bean Name，用于告诉Spring，在初始化的时候，需要返回原始给定实例，而别返回代理对象
+	 * 	String ORIGINAL_INSTANCE_SUFFIX = ".ORIGINAL";
 	 * @since 5.1
 	 * @see #initializeBean(Object, String)
 	 * @see #applyBeanPostProcessorsBeforeInitialization(Object, String)
