@@ -150,6 +150,8 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 	 * Implementation of {@code InvocationHandler.invoke}.
 	 * <p>Callers will see exactly the exception thrown by the target,
 	 * unless a hook method throws an exception.
+	 *
+	 * SpringAOP代理方法的实现原理 经典最终版解释：（1）首先确定一个Bean是否需要被代理，如何确定？看容器中是否有匹配的Advice （2）当执行 代理方法的时候会通过pointcut拿到当前执行方法匹配得到的advice
 	 */
 	@Override
 	@Nullable

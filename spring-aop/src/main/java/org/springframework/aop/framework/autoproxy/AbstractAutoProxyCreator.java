@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.aopalliance.aop.Advice;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.TargetSource;
@@ -244,16 +243,31 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
 		Object cacheKey = getCacheKey(beanClass, beanName);
 
+		//如果targetSourcebeans中不包含beanName 则if为true
+
+
+		// 判断TargetSource缓存中是否包含当前bean，如果不包含，则判断当前bean是否是已经被代理的bean，
+		// 如果代理过，则不对当前传入的bean进行处理，如果没代理过，则判断当前bean是否为系统bean，或者是
+		// 切面逻辑不会包含的bean，如果是，则将当前bean缓存到advisedBeans中，否则继续往下执行。
+		// 经过这一步的处理之后，只有在TargetSource中没有进行缓存，并且应该被切面逻辑环绕，但是目前还未
+		// 生成代理对象的bean才会通过此方法。
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
+			//如果advisedBeans中包含beanName则返回null
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
+			//如果是基础组件，或者应该跳过
+			//如果允许跳过或者是基础组件 则会被放入到advisedbeans中。否则将不会放入到advisedBeans中。
+			//因此这里我们得出结论： advisedBeans中存放的是 基础AOP组件以及应该被跳过的Bean。
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
 			}
 		}
 
+		//如果我们有一个自定义的TargetSource，在这里创建代理。
+		//抑制目标bean不必要的默认实例化:
+		// TargetSource将以自定义的方式处理目标实例。
 		// Create proxy here if we have a custom TargetSource.
 		// Suppresses unnecessary default instantiation of the target bean:
 		// The TargetSource will handle target instances in a custom fashion.
@@ -289,6 +303,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	/**
 	 * Create a proxy with the configured interceptors if the bean is
 	 * identified as one to proxy by the subclass.
+	 * 如果bean是，则使用已配置的拦截器创建代理被子类标识为一个代理。
 	 * @see #getAdvicesAndAdvisorsForBean
 	 */
 	@Override
@@ -387,6 +402,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * a circular reference or if the existing target instance needs to be preserved.
 	 * This implementation returns {@code false} unless the bean name indicates an
 	 * "original instance" according to {@code AutowireCapableBeanFactory} conventions.
+	 * 如果给定的bean不应该被这个后处理程序考虑为自动代理，那么子类应该重写这个方法以返回true。
+	 * 有时我们需要能够避免这种情况的发生，例如，它是否会导致循环引用，或者是否需要保留现有的目标实例。
+	 * 除非bean名根据AutowireCapableBeanFactory约定指示为“原始实例”，否则该实现将返回false。
 	 * @param beanClass the class of the bean
 	 * @param beanName the name of the bean
 	 * @return whether to skip the given bean
@@ -401,6 +419,12 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * Returns {@code null} if no custom TargetSource should be used.
 	 * <p>This implementation uses the "customTargetSourceCreators" property.
 	 * Subclasses can override this method to use a different mechanism.
+	 *
+	 * 为bean实例创建目标源。
+	 * 如果设置，使用任何TargetSourceCreators。
+	 * 如果不使用自定义TargetSource，则返回null。
+	 * 这个实现使用“customTargetSourceCreators”属性。
+	 * 子类可以重写此方法以使用不同的机制。
 	 * @param beanClass the class of the bean to create a TargetSource for
 	 * @param beanName the name of the bean
 	 * @return a TargetSource for this bean
@@ -408,7 +432,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 */
 	@Nullable
 	protected TargetSource getCustomTargetSource(Class<?> beanClass, String beanName) {
-		// We can't create fancy target sources for directly registered singletons.
+		// We can't create fancy target sources for directly registered singletons.我们不能为直接注册的单例创建花哨的目标源。
 		if (this.customTargetSourceCreators != null &&
 				this.beanFactory != null && this.beanFactory.containsBean(beanName)) {
 			for (TargetSourceCreator tsc : this.customTargetSourceCreators) {
