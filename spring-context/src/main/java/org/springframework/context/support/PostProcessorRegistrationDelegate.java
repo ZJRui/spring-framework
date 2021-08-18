@@ -58,7 +58,18 @@ final class PostProcessorRegistrationDelegate {
 
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
-
+//警告:虽然看起来这个方法的主体可以很容易地
+//重构以避免使用多个循环和多个列表，使用
+//多个列表和多次传递的处理器的名称是
+//故意的我们必须确保我们遵守优先订购的合同
+//和有序处理器。
+		//具体地说，我们必须不使处理器是
+//实例化(通过getBean()调用)或注册在ApplicationContext
+//错误的顺序。
+//
+//在提交一个pull request (PR)来更改此方法之前，请查看
+//所有涉及更改PostProcessorRegistrationDelegate的被拒绝的PRs
+//确保你的提案不会导致破坏性的变化:
 		// WARNING: Although it may appear that the body of this method can be easily
 		// refactored to avoid the use of multiple loops and multiple lists, the use
 		// of multiple lists and multiple passes over the names of processors is
@@ -75,6 +86,7 @@ final class PostProcessorRegistrationDelegate {
 		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
 		Set<String> processedBeans = new HashSet<>();
 
+		//一般容器对象也是BeanDefinitionRegistry对象 DefaultListableBeanFactory就是BeanDefinitionRegistry接口的子类
 		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
@@ -92,6 +104,10 @@ final class PostProcessorRegistrationDelegate {
 				}
 			}
 
+			//不要在这里初始化FactoryBeans:我们需要离开所有常规bean
+//未初始化，让bean工厂的后处理器应用到它们!
+//分隔实现的BeanDefinitionRegistryPostProcessors
+// prioritorordered, Ordered和其他。
 			// Do not initialize FactoryBeans here: We need to leave all regular beans
 			// uninitialized to let the bean factory post-processors apply to them!
 			// Separate between BeanDefinitionRegistryPostProcessors that implement

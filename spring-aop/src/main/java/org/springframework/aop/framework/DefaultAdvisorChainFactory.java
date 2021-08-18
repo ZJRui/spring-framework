@@ -62,8 +62,11 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 		for (Advisor advisor : advisors) {
 			if (advisor instanceof PointcutAdvisor) {
 				// Add it conditionally.
+				//
 				PointcutAdvisor pointcutAdvisor = (PointcutAdvisor) advisor;
 				if (config.isPreFiltered() || pointcutAdvisor.getPointcut().getClassFilter().matches(actualClass)) {
+					//Pointcut 切点：决定Advice通知应该作用于哪个连接点，也就是说通过Poincut来定义需要增强的方法的集合，这些集合的选择可以按照一定的规则来完成。在这种情况下，Pointcut通常意味着标识方法
+					//拿到Pointcut,然后拿到Pointcut内部的MethodMatcher《参考spring技术内幕：深入解析spring》
 					MethodMatcher mm = pointcutAdvisor.getPointcut().getMethodMatcher();
 					boolean match;
 					if (mm instanceof IntroductionAwareMethodMatcher) {
@@ -73,6 +76,7 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 						match = ((IntroductionAwareMethodMatcher) mm).matches(method, actualClass, hasIntroductions);
 					}
 					else {
+						//判断当前的method是否命中pointcut
 						match = mm.matches(method, actualClass);
 					}
 					if (match) {

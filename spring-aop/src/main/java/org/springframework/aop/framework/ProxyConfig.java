@@ -56,6 +56,12 @@ public class ProxyConfig implements Serializable {
 	 * the proxy-target-class behavior will also be applied if no interfaces
 	 * have been specified (and no interface autodetection is activated).
 	 * @see org.springframework.aop.TargetSource#getTargetClass()
+	 * 设置是否直接代理目标类，而不是仅仅代理特定的接口。
+	 * 默认设置是“假”。
+	 * 将此设置为"true"以强制代理TargetSource的公开目标类。
+	 * 如果目标类是一个接口，那么将为给定的接口创建一个JDK代理。
+	 * 如果目标类是任何其他类，则将为给定类创建一个CGLIB代理。
+	 * 注意:根据具体代理工厂的配置，如果没有指定接口(并且没有激活接口自动检测)，也将应用代理目标类行为。
 	 */
 	public void setProxyTargetClass(boolean proxyTargetClass) {
 		this.proxyTargetClass = proxyTargetClass;
@@ -78,6 +84,13 @@ public class ProxyConfig implements Serializable {
 	 * is disabled by default. An optimize value of "true" may be ignored
 	 * if other settings preclude optimization: for example, if "exposeProxy"
 	 * is set to "true" and that's not compatible with the optimization.
+	 * 设置代理是否应该执行主动优化。
+	 * “积极优化”的确切含义在代理之间是不同的，但通常会有一些权衡。
+	 * 默认设置是“假”。
+	 * 例如，优化通常意味着在创建代理后通知更改不会生效。
+	 * 因此，默认情况下禁用优化。
+	 * 如果其他设置排除了优化，“true”的优化值可能会被忽略:例如，如果“exposeProxy”被设置为“true”，而这与优化不兼容。
+	 * opaque，代表子类是否能被转换为Advised接口，默认为false，表示可以
 	 */
 	public void setOptimize(boolean optimize) {
 		this.optimize = optimize;
@@ -95,6 +108,8 @@ public class ProxyConfig implements Serializable {
 	 * from being cast to {@link Advised} to query proxy status.
 	 * <p>Default is "false", meaning that any AOP proxy can be cast to
 	 * {@link Advised}.
+	 * 设置此配置创建的代理是否应防止转换为建议，以查询代理状态。
+	 * 默认值是“false”，这意味着任何AOP代理都可以转换为advice。
 	 */
 	public void setOpaque(boolean opaque) {
 		this.opaque = opaque;

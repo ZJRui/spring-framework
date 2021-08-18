@@ -192,6 +192,8 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 				setProxyContext = true;
 			}
 
+			//尽量迟到，以减少我们“拥有”目标的时间，
+			//如果它来自一个池。
 			// Get as late as possible to minimize the time we "own" the target,
 			// in case it comes from a pool.
 			target = targetSource.getTarget();
