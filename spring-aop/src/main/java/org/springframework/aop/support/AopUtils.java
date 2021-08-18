@@ -221,11 +221,17 @@ public abstract class AopUtils {
 	 * @return whether the pointcut can apply on any method
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
+		/**
+		 * Pointcut
+		 */
 		Assert.notNull(pc, "Pointcut must not be null");
 		if (!pc.getClassFilter().matches(targetClass)) {
 			return false;
 		}
 
+		/**
+		 * 获取到Pointcut内部的MethodMatcher
+		 */
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
@@ -241,10 +247,17 @@ public abstract class AopUtils {
 		if (!Proxy.isProxyClass(targetClass)) {
 			classes.add(ClassUtils.getUserClass(targetClass));
 		}
+		//获取目标类的所有接口，然后针对接口方法进行判断 Poincut是否匹配到 方法
 		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 
 		for (Class<?> clazz : classes) {
+			/**
+			 * 获取接口中的每一个方法
+			 */
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
+			/**
+			 * 针对每一个方法 Poincut 内部的MethodMatcher去匹配，如果匹配成功则表示Advisor中的Advice可以应用到该方法增强
+			 */
 			for (Method method : methods) {
 				if (introductionAwareMethodMatcher != null ?
 						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :
