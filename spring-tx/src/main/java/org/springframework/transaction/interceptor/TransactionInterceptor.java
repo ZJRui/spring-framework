@@ -94,6 +94,13 @@ public class TransactionInterceptor extends TransactionAspectSupport implements 
 		// as well as the method, which may be from an interface.
 		Class<?> targetClass = (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis()) : null);
 
+		/**
+		 *
+		 * According to source codes of AnnotationTransactionAspect and ProxyTransactionManagementConfiguration
+		 * the @Transactional annotation when used on a class level is only applied to public method even if we use AspectJ.
+		 * 根据AnnotationTransactionAspect和ProxyTransactionManagementConfiguration的源代码，@Transactional注释在类级别上使用时只应用于公共方法，即使我们使用AspectJ。
+		 *
+		 */
 		// Adapt to TransactionAspectSupport's invokeWithinTransaction...
 		return invokeWithinTransaction(invocation.getMethod(), targetClass, invocation::proceed);
 	}
