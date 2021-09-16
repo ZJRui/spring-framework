@@ -69,7 +69,7 @@ import org.springframework.util.comparator.InstanceComparator;
  * @since 2.0
  */
 @SuppressWarnings("serial")
-public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFactory implements Serializable {
+public class ReflectiveAspectJAdvisorFactory extends org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactory implements Serializable {
 
 	// Exclude @Pointcut methods
 	private static final MethodFilter adviceMethodFilter = ReflectionUtils.USER_DECLARED_METHODS
@@ -87,7 +87,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 				new InstanceComparator<>(
 						Around.class, Before.class, After.class, AfterReturning.class, AfterThrowing.class),
 				(Converter<Method, Annotation>) method -> {
-					AspectJAnnotation<?> ann = AbstractAspectJAdvisorFactory.findAspectJAnnotationOnMethod(method);
+					AspectJAnnotation<?> ann = org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactory.findAspectJAnnotationOnMethod(method);
 					return (ann != null ? ann.getAnnotation() : null);
 				});
 		Comparator<Method> methodNameComparator = new ConvertingComparator<>(Method::getName);
@@ -121,15 +121,15 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 
 
 	@Override
-	public List<Advisor> getAdvisors(MetadataAwareAspectInstanceFactory aspectInstanceFactory) {
+	public List<Advisor> getAdvisors(org.springframework.aop.aspectj.annotation.MetadataAwareAspectInstanceFactory aspectInstanceFactory) {
 		Class<?> aspectClass = aspectInstanceFactory.getAspectMetadata().getAspectClass();
 		String aspectName = aspectInstanceFactory.getAspectMetadata().getAspectName();
 		validate(aspectClass);
 
 		// We need to wrap the MetadataAwareAspectInstanceFactory with a decorator
 		// so that it will only instantiate once.
-		MetadataAwareAspectInstanceFactory lazySingletonAspectInstanceFactory =
-				new LazySingletonAspectInstanceFactoryDecorator(aspectInstanceFactory);
+		org.springframework.aop.aspectj.annotation.MetadataAwareAspectInstanceFactory lazySingletonAspectInstanceFactory =
+				new org.springframework.aop.aspectj.annotation.LazySingletonAspectInstanceFactoryDecorator(aspectInstanceFactory);
 
 		List<Advisor> advisors = new ArrayList<>();
 		for (Method method : getAdvisorMethods(aspectClass)) {
@@ -166,6 +166,25 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 
 	private List<Method> getAdvisorMethods(Class<?> aspectClass) {
 		List<Method> methods = new ArrayList<>();
+		/***
+		 *
+		 *
+
+		 AnnotationAwareAspectJAutoProxyCreator.findCandidateAdvisors-->BeanFactoryAspectJAdvisorsBuilder.buildAspectJAdvisors--->
+		 在buildAspectJAdvisors方法中  BeanFactory中获取所有Object类型的bean的BeanNames，然后遍历每一个beanName，根据beanName得到Beanclass，使用【this.advisorFactory.isAspect(beanType)】判断beanClass上是否有@Aspect注解，如果有注解@Aspect，则根据beanName构建一个MetadataAwareAspectInstanceFactory，然后使用 this.advisorFactory.getAdvisors(factory);解析这个factory得到Advisor
+		 MetadataAwareAspectInstanceFactory factory =
+		 new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
+
+		 List<Advisor> classAdvisors = this.advisorFactory.getAdvisors(factory);
+
+		 在getAdvisors中会  将BeanClass作为AspectClass，然后使用getAdvisorMethods(aspectClass)方法获取这个beanClass中的Advisor。 注意我们在类上使用@Aspect注解的时候 需要将这个类注入到Spring容器中，从上面的代码中我们看到是获取容器中的所有bean，判断class上是否有注解@Aspect，如果有的话则传递beanName 创建MetadataAwareAspectInstanceFactory对象， 在这个factory对象中 会根据beanName解析beanClass作为aspectClass。
+
+		 因此getAdvisorMethods(aspectClass)这里的aspectClass就是beanClass，同时也是@Aspect注解标注的类的class，getAdvisorMethods(aspectClass)会获取aspectClass中没有使用@Pointcut注解标注的方法，对这些方法进行遍历，判断每一个方法上是否有Before Around after等注解，如果有则创建一个InstantiationModelAwarePointcutAdvisorImpl对象来封装这个方法，最终作为method对应的advisor
+
+		 =======
+		 ReflectionUtils.doWithMethods方法中会对解析到的aspectClass中的方法进行缓存
+		 *
+		 */
 		ReflectionUtils.doWithMethods(aspectClass, methods::add, adviceMethodFilter);
 		if (methods.size() > 1) {
 			methods.sort(adviceMethodComparator);
@@ -199,7 +218,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 
 	@Override
 	@Nullable
-	public Advisor getAdvisor(Method candidateAdviceMethod, MetadataAwareAspectInstanceFactory aspectInstanceFactory,
+	public Advisor getAdvisor(Method candidateAdviceMethod, org.springframework.aop.aspectj.annotation.MetadataAwareAspectInstanceFactory aspectInstanceFactory,
 			int declarationOrderInAspect, String aspectName) {
 
 		validate(aspectInstanceFactory.getAspectMetadata().getAspectClass());
@@ -210,14 +229,14 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 			return null;
 		}
 
-		return new InstantiationModelAwarePointcutAdvisorImpl(expressionPointcut, candidateAdviceMethod,
+		return new org.springframework.aop.aspectj.annotation.InstantiationModelAwarePointcutAdvisorImpl(expressionPointcut, candidateAdviceMethod,
 				this, aspectInstanceFactory, declarationOrderInAspect, aspectName);
 	}
 
 	@Nullable
 	private AspectJExpressionPointcut getPointcut(Method candidateAdviceMethod, Class<?> candidateAspectClass) {
 		AspectJAnnotation<?> aspectJAnnotation =
-				AbstractAspectJAdvisorFactory.findAspectJAnnotationOnMethod(candidateAdviceMethod);
+				org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactory.findAspectJAnnotationOnMethod(candidateAdviceMethod);
 		if (aspectJAnnotation == null) {
 			return null;
 		}
@@ -235,13 +254,13 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 	@Override
 	@Nullable
 	public Advice getAdvice(Method candidateAdviceMethod, AspectJExpressionPointcut expressionPointcut,
-			MetadataAwareAspectInstanceFactory aspectInstanceFactory, int declarationOrder, String aspectName) {
+							org.springframework.aop.aspectj.annotation.MetadataAwareAspectInstanceFactory aspectInstanceFactory, int declarationOrder, String aspectName) {
 
 		Class<?> candidateAspectClass = aspectInstanceFactory.getAspectMetadata().getAspectClass();
 		validate(candidateAspectClass);
 
 		AspectJAnnotation<?> aspectJAnnotation =
-				AbstractAspectJAdvisorFactory.findAspectJAnnotationOnMethod(candidateAdviceMethod);
+				org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactory.findAspectJAnnotationOnMethod(candidateAdviceMethod);
 		if (aspectJAnnotation == null) {
 			return null;
 		}
@@ -320,7 +339,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 	@SuppressWarnings("serial")
 	protected static class SyntheticInstantiationAdvisor extends DefaultPointcutAdvisor {
 
-		public SyntheticInstantiationAdvisor(final MetadataAwareAspectInstanceFactory aif) {
+		public SyntheticInstantiationAdvisor(final org.springframework.aop.aspectj.annotation.MetadataAwareAspectInstanceFactory aif) {
 			super(aif.getAspectMetadata().getPerClausePointcut(), (MethodBeforeAdvice)
 					(method, args, target) -> aif.getAspectInstance());
 		}
