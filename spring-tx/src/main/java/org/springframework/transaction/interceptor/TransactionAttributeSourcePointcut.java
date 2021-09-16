@@ -41,9 +41,43 @@ abstract class TransactionAttributeSourcePointcut extends StaticMethodMatcherPoi
 	}
 
 
+	/**
+	 *
+	 * @param method
+	 * @param targetClass
+	 * @return
+	 */
 	@Override
 	public boolean matches(Method method, Class<?> targetClass) {
-		TransactionAttributeSource tas = getTransactionAttributeSource();
+		/**
+		 *
+		 * 这个地方调用了 getTransactionAttributeSource
+		 *
+		 *
+		 *
+		 * 	 *
+		 * 	 *2.2% - 2,928 bytes - 122 alloc. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean
+		 * 	 *   56.2% - 2,280 bytes - 95 alloc. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsAfterInitialization
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.postProcessAfterInitialization
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.wrapIfNecessary
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator.getAdvicesAndAdvisorsForBean
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator.findEligibleAdvisors
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator.findAdvisorsThatCanApply
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.support.AopUtils.findAdvisorsThatCanApply
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.support.AopUtils.canApply
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.support.AopUtils.canApply
+		 * 	 ========================  这个地方调用  TransactionAttributeSourcePointcut.matches，也就是当前方法
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.transaction.interceptor.TransactionAttributeSourcePointcut.matches
+		 * 	 *   =============================== 这个地方调用了 getTransactionAttribute
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource.getTransactionAttribute
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource.getCacheKey
+		 * 	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource$DefaultCacheKey.<init>
+		 * 	 *
+		 * 	 *
+		 *
+		 */
+		org.springframework.transaction.interceptor.TransactionAttributeSource tas = getTransactionAttributeSource();
 		return (tas == null || tas.getTransactionAttribute(method, targetClass) != null);
 	}
 
@@ -75,7 +109,7 @@ abstract class TransactionAttributeSourcePointcut extends StaticMethodMatcherPoi
 	 * To be implemented by subclasses.
 	 */
 	@Nullable
-	protected abstract TransactionAttributeSource getTransactionAttributeSource();
+	protected abstract org.springframework.transaction.interceptor.TransactionAttributeSource getTransactionAttributeSource();
 
 
 	/**
@@ -86,12 +120,12 @@ abstract class TransactionAttributeSourcePointcut extends StaticMethodMatcherPoi
 
 		@Override
 		public boolean matches(Class<?> clazz) {
-			if (TransactionalProxy.class.isAssignableFrom(clazz) ||
+			if (org.springframework.transaction.interceptor.TransactionalProxy.class.isAssignableFrom(clazz) ||
 					TransactionManager.class.isAssignableFrom(clazz) ||
 					PersistenceExceptionTranslator.class.isAssignableFrom(clazz)) {
 				return false;
 			}
-			TransactionAttributeSource tas = getTransactionAttributeSource();
+			org.springframework.transaction.interceptor.TransactionAttributeSource tas = getTransactionAttributeSource();
 			return (tas == null || tas.isCandidateClass(clazz));
 		}
 	}

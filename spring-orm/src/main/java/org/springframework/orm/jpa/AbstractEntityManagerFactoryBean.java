@@ -531,6 +531,27 @@ public abstract class AbstractEntityManagerFactoryBean implements
 	 * that will be returned by the {@code getObject()} method.
 	 * @return the EntityManagerFactory instance returned by this FactoryBean
 	 * @throws PersistenceException if the EntityManager cannot be created
+	 *
+	 *
+	 * org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl.build	 263 ms (0 %)	263 ms	1
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.orm.jpa.vendor.SpringHibernateJpaPersistenceProvider.createContainerEntityManagerFactory
+	 *   0.0% - 263 ms - 1 hot spot inv. javax.persistence.spi.PersistenceProvider.createContainerEntityManagerFactory
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean.createNativeEntityManagerFactory
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.afterPropertiesSet
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory$1.getObject
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.getBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.getBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.refresh
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.boot.SpringApplication.refresh
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.boot.SpringApplication.createAndRefreshContext
+	 *
 	 */
 	protected abstract EntityManagerFactory createNativeEntityManagerFactory() throws PersistenceException;
 

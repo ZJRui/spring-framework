@@ -321,6 +321,9 @@ public class JpaTransactionManager extends AbstractPlatformTransactionManager
 	 * Retrieves an EntityManagerFactory by persistence unit name, if none set explicitly.
 	 * Falls back to a default EntityManagerFactory bean if no persistence unit specified.
 	 * @see #setPersistenceUnitName
+	 *
+	 *
+	 *
 	 */
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
@@ -330,6 +333,51 @@ public class JpaTransactionManager extends AbstractPlatformTransactionManager
 						"in a non-listable BeanFactory: " + beanFactory);
 			}
 			ListableBeanFactory lbf = (ListableBeanFactory) beanFactory;
+			/***
+			 *
+			 * 这个setBeanFactory是一个重要的入口点
+			 *
+			 * s - 2 hot spot inv. org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection
+			 *   0.0% - 245 ms - 2 hot spot inv. org.springframework.jdbc.datasource.DataSourceUtils.getConnection
+			 *   0.0% - 245 ms - 2 hot spot inv. org.springframework.jdbc.core.JdbcTemplate.execute
+			 *   0.0% - 245 ms - 2 hot spot inv. org.springframework.boot.autoconfigure.jdbc.EmbeddedDatabaseConnection.isEmbedded
+			 *   0.0% - 245 ms - 2 hot spot inv. org.springframework.boot.autoconfigure.orm.jpa.JpaProperties$Hibernate.getDefaultDdlAuto
+			 *   0.0% - 245 ms - 2 hot spot inv. org.springframework.boot.autoconfigure.orm.jpa.JpaProperties$Hibernate.getOrDeduceDdlAuto
+			 *   0.0% - 245 ms - 2 hot spot inv. org.springframework.boot.autoconfigure.orm.jpa.JpaProperties$Hibernate.getAdditionalProperties
+			 *   0.0% - 245 ms - 2 hot spot inv. org.springframework.boot.autoconfigure.orm.jpa.JpaProperties.getHibernateProperties
+			 *   0.0% - 245 ms - 1 hot spot inv. org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.getVendorProperties
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.boot.autoconfigure.orm.jpa.DataSourceInitializedPublisher.isInitializingDatabase
+			 *                        注意这个DataSourceInitializedPublisher 是 springboot 的autoconfigure项目中提供的一个BeanPostProcessor，在这个类的postProcessAfterInitialization 中对bean进行操作
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.boot.autoconfigure.orm.jpa.DataSourceInitializedPublisher.postProcessAfterInitialization
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsAfterInitialization
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.postProcessObjectFromFactoryBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.FactoryBeanRegistrySupport.getObjectFromFactoryBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.getObjectForBeanInstance
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.getBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.DefaultListableBeanFactory.getBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.DefaultListableBeanFactory.getBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.orm.jpa.EntityManagerFactoryUtils.findEntityManagerFactory
+			 *                注意 这个地方的JpaTransactionManager的setBeanFactory中调用了findEntityManagerFactory
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.orm.jpa.JpaTransactionManager.setBeanFactory
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeAwareMethods
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory$1.getObject
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.getBean
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.refresh
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.boot.SpringApplication.refresh
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.boot.SpringApplication.createAndRefreshContext
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.boot.SpringApplication.run
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.boot.SpringApplication.run
+			 *   0.0% - 32 µs - 1 hot spot inv. org.springframework.boot.SpringApplication.run
+			 *
+			 */
 			setEntityManagerFactory(EntityManagerFactoryUtils.findEntityManagerFactory(lbf, getPersistenceUnitName()));
 		}
 	}

@@ -89,6 +89,9 @@ import org.springframework.core.annotation.AliasFor;
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+/**
+ * 实现原理参考  EventListenerMethodProcessor
+ */
 public @interface EventListener {
 
 	/**

@@ -54,6 +54,17 @@ public final class MethodIntrospector {
 	 * or {@code null} for no match
 	 * @return the selected methods associated with their metadata (in the order of retrieval),
 	 * or an empty map in case of no match
+	 *
+	 *
+	 *
+	100.0% - 480 bytes - 20 alloc. org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization
+	100.0% - 480 bytes - 20 alloc. org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons
+	 ==========EventListenerMethodProcessor 作为SmartInitializingSingleton
+	100.0% - 480 bytes - 20 alloc. org.springframework.context.event.EventListenerMethodProcessor.afterSingletonsInstantiated
+	100.0% - 480 bytes - 20 alloc. org.springframework.context.event.EventListenerMethodProcessor.processBean
+	100.0% - 480 bytes - 20 alloc. org.springframework.core.MethodIntrospector.selectMethods
+	100.0% - 480 bytes - 20 alloc. org.springframework.core.MethodIntrospector$1.<init>
+	 *
 	 */
 	public static <T> Map<Method, T> selectMethods(Class<?> targetType, final MetadataLookup<T> metadataLookup) {
 		final Map<Method, T> methodMap = new LinkedHashMap<>();
@@ -69,6 +80,9 @@ public final class MethodIntrospector {
 		for (Class<?> currentHandlerType : handlerTypes) {
 			final Class<?> targetClass = (specificHandlerType != null ? specificHandlerType : currentHandlerType);
 
+			/**
+			 *这里创建一个 org.springframework.util.ReflectionUtils.MethodCallback#doWith
+			 */
 			ReflectionUtils.doWithMethods(currentHandlerType, method -> {
 				Method specificMethod = ClassUtils.getMostSpecificMethod(method, targetClass);
 				T result = metadataLookup.inspect(specificMethod);

@@ -229,6 +229,8 @@ public class MethodProxy {
 
 	/**
 	 * Invoke the original (super) method on the specified object.
+	 * cglib代理生成的是子类，在ConfigurationClassEnhancer.BeanMethodInterceptor#intercept(java.lang.Object, java.lang.reflect.Method, java.lang.Object[], org.springframework.cglib.proxy.MethodProxy)
+	 * 方法中 会调用invokeSuper，从而实现调用子类对象方法的时候拦截到，转而调用父类的方法
 	 * @param obj the enhanced object, must be the object passed as the first
 	 * argument to the MethodInterceptor
 	 * @param args the arguments passed to the intercepted method; you may substitute a different

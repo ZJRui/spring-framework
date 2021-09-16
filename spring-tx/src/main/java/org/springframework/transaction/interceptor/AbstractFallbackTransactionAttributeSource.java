@@ -52,14 +52,14 @@ import org.springframework.util.StringValueResolver;
  * @since 1.1
  */
 public abstract class AbstractFallbackTransactionAttributeSource
-		implements TransactionAttributeSource, EmbeddedValueResolverAware {
+		implements org.springframework.transaction.interceptor.TransactionAttributeSource, EmbeddedValueResolverAware {
 
 	/**
 	 * Canonical value held in cache to indicate no transaction attribute was
 	 * found for this method, and we don't need to look again.
 	 */
 	@SuppressWarnings("serial")
-	private static final TransactionAttribute NULL_TRANSACTION_ATTRIBUTE = new DefaultTransactionAttribute() {
+	private static final org.springframework.transaction.interceptor.TransactionAttribute NULL_TRANSACTION_ATTRIBUTE = new org.springframework.transaction.interceptor.DefaultTransactionAttribute() {
 		@Override
 		public String toString() {
 			return "null";
@@ -82,7 +82,7 @@ public abstract class AbstractFallbackTransactionAttributeSource
 	 * <p>As this base class is not marked Serializable, the cache will be recreated
 	 * after serialization - provided that the concrete subclass is Serializable.
 	 */
-	private final Map<Object, TransactionAttribute> attributeCache = new ConcurrentHashMap<>(1024);
+	private final Map<Object, org.springframework.transaction.interceptor.TransactionAttribute> attributeCache = new ConcurrentHashMap<>(1024);
 
 
 	@Override
@@ -98,17 +98,39 @@ public abstract class AbstractFallbackTransactionAttributeSource
 	 * @param targetClass the target class for this invocation (may be {@code null})
 	 * @return a TransactionAttribute for this method, or {@code null} if the method
 	 * is not transactional
+	 *
+	 * --------------------
+	 *
+	 *2.2% - 2,928 bytes - 122 alloc. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean
+	 *   56.2% - 2,280 bytes - 95 alloc. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsAfterInitialization
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.postProcessAfterInitialization
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.wrapIfNecessary
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator.getAdvicesAndAdvisorsForBean
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator.findEligibleAdvisors
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator.findAdvisorsThatCanApply
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.support.AopUtils.findAdvisorsThatCanApply
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.support.AopUtils.canApply
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.aop.support.AopUtils.canApply
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.transaction.interceptor.TransactionAttributeSourcePointcut.matches
+	 *   =============================== 这个地方调用了 getTransactionAttribute
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource.getTransactionAttribute
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource.getCacheKey
+	 *   53.8% - 2,184 bytes - 91 alloc. org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource$DefaultCacheKey.<init>
+	 *
+	 *
+	 *
 	 */
 	@Override
 	@Nullable
-	public TransactionAttribute getTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
+	public org.springframework.transaction.interceptor.TransactionAttribute getTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
 		if (method.getDeclaringClass() == Object.class) {
 			return null;
 		}
 
 		// First, see if we have a cached value.
 		Object cacheKey = getCacheKey(method, targetClass);
-		TransactionAttribute cached = this.attributeCache.get(cacheKey);
+		org.springframework.transaction.interceptor.TransactionAttribute cached = this.attributeCache.get(cacheKey);
 		if (cached != null) {
 			// Value will either be canonical value indicating there is no transaction attribute,
 			// or an actual transaction attribute.
@@ -121,15 +143,15 @@ public abstract class AbstractFallbackTransactionAttributeSource
 		}
 		else {
 			// We need to work it out.
-			TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
+			org.springframework.transaction.interceptor.TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
 			// Put it in the cache.
 			if (txAttr == null) {
 				this.attributeCache.put(cacheKey, NULL_TRANSACTION_ATTRIBUTE);
 			}
 			else {
 				String methodIdentification = ClassUtils.getQualifiedMethodName(method, targetClass);
-				if (txAttr instanceof DefaultTransactionAttribute) {
-					DefaultTransactionAttribute dta = (DefaultTransactionAttribute) txAttr;
+				if (txAttr instanceof org.springframework.transaction.interceptor.DefaultTransactionAttribute) {
+					org.springframework.transaction.interceptor.DefaultTransactionAttribute dta = (org.springframework.transaction.interceptor.DefaultTransactionAttribute) txAttr;
 					dta.setDescriptor(methodIdentification);
 					dta.resolveAttributeStrings(this.embeddedValueResolver);
 				}
@@ -162,7 +184,7 @@ public abstract class AbstractFallbackTransactionAttributeSource
 	 * @see #getTransactionAttribute
 	 */
 	@Nullable
-	protected TransactionAttribute computeTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
+	protected org.springframework.transaction.interceptor.TransactionAttribute computeTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
 		// Don't allow no-public methods as required.
 		if (allowPublicMethodsOnly() && !Modifier.isPublic(method.getModifiers())) {
 			return null;
@@ -173,7 +195,7 @@ public abstract class AbstractFallbackTransactionAttributeSource
 		Method specificMethod = AopUtils.getMostSpecificMethod(method, targetClass);
 
 		// First try is the method in the target class.
-		TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
+		org.springframework.transaction.interceptor.TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
 		if (txAttr != null) {
 			return txAttr;
 		}
@@ -208,7 +230,7 @@ public abstract class AbstractFallbackTransactionAttributeSource
 	 * @return all transaction attribute associated with this class, or {@code null} if none
 	 */
 	@Nullable
-	protected abstract TransactionAttribute findTransactionAttribute(Class<?> clazz);
+	protected abstract org.springframework.transaction.interceptor.TransactionAttribute findTransactionAttribute(Class<?> clazz);
 
 	/**
 	 * Subclasses need to implement this to return the transaction attribute for the
@@ -217,7 +239,7 @@ public abstract class AbstractFallbackTransactionAttributeSource
 	 * @return all transaction attribute associated with this method, or {@code null} if none
 	 */
 	@Nullable
-	protected abstract TransactionAttribute findTransactionAttribute(Method method);
+	protected abstract org.springframework.transaction.interceptor.TransactionAttribute findTransactionAttribute(Method method);
 
 	/**
 	 * Should only public methods be allowed to have transactional semantics?
