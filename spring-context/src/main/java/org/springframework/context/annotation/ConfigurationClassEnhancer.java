@@ -69,6 +69,58 @@ import org.springframework.util.ReflectionUtils;
  * @since 3.0
  * @see #enhance
  * @see ConfigurationClassPostProcessor
+ *
+ *
+ *
+ *
+ *  我们分析下这个@Bean是如何实现注入Bean的？
+ * 	 *
+ * 	 	 * 我们分析下这个@Bean是如何实现注入Bean的？ 首先@Bean注解判断是否存在 的方法是org.springframework.context.annotation.BeanAnnotationHelper#isBeanAnnotated(java.lang.reflect.Method)
+ * 	 *
+ * 	 * @Bean注解的方法被拦截是在 ：ConfigurationClassEnhancer.BeanMethodInterceptor#intercept(java.lang.Object, java.lang.reflect.Method, java.lang.Object[], MethodProxy)
+ * 	 *
+ *
+ * 	 * 在下面的调用栈中，首先是执行getBean， 这个里的transactionAdvisor 最终会被包装成工厂方法来创建bean，因此getBean最终会调用AbstractBeanFactory$1.getObject()来获取bean
+ * 	 * 在工厂方法的getObject内会执行SimpleInstantiationStrategy  instantiate 来实例化bean，在instantiate方法中 执行了 factoryMethod.invoke(factoryBean, args);
+ * 	 * 也就是具体执行这里的工厂方法transactionAdvisor， 从堆栈信息来看，在执行 transactionAdvisor之前 先执行了了拦截器ConfigurationClassEnhancer$BeanMethodInterceptor的intercept方法
+ * 	 *
+ * 	 * 在创建@Configuration标注的 类对象的时候会执行 org.springframework.context.annotation.ConfigurationClassPostProcessor#postProcessBeanFactory(ConfigurableListableBeanFactory)
+ * 	 * 在这个postProcessBeanFactory方法中会执行 org.springframework.context.annotation.ConfigurationClassPostProcessor#enhanceConfigurationClasses(ConfigurableListableBeanFactory)
+ * 	 *
+ * 	 * 在这个enhanceConfigurationClasses方法中会创建，对这个Configuration  Class 进行增强。 增强的属性中指定了callback，
+ * 	 * ConfigurationClassEnhancer enhancer = new ConfigurationClassEnhancer();
+ * 	 * Class<?> enhancedClass = enhancer.enhance(configClass, this.beanClassLoader);
+ * 	 *
+ * 	 * 在这个Callback数组中有两个重要的拦截器： BeanMethodInterceptor和BeanFactoryAwareMethodInterceptor， 这就导致增强后的Configuration class执行 原来Configuration
+ * 	 * class中的方法的时候会被增强。
+ * 	 *
+ * 	 *
+ * 	 * class ConfigurationClassEnhancer {
+ * 	 *
+ * 	 * 	// The callbacks to use. Note that these callbacks must be stateless.
+ * 	 * 	private static final Callback[] CALLBACKS = new Callback[] {
+ * 	 * 			new BeanMethodInterceptor(),
+ * 	 * 			new BeanFactoryAwareMethodInterceptor(),
+ * 	 * 			NoOp.INSTANCE
+ * 	 *        };
+ * 	 *
+ * 	 *  }
+ * 	 *
+ * 	 * org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(java.lang.Object, java.lang.reflect.Method, java.lang.Object[ ], org.springframework.cglib.proxy.MethodProxy)
+ * 	 * org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$5cecf520.transactionAdvisor()
+ * 	 * org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(org.springframework.beans.factory.support.RootBeanDefinition, java.lang.String, org.springframework.beans.factory.BeanFactory, java.lang.Object, java.lang.reflect.Method, java.lang.Object[ ])
+ * 	 * org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+ * 	 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+ * 	 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+ * 	 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+ * 	 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+ * 	 * org.springframework.beans.factory.support.AbstractBeanFactory$1.getObject()
+ * 	 * org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(java.lang.String, org.springframework.beans.factory.ObjectFactory)
+ * 	 * org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(java.lang.String, java.lang.Class, java.lang.Object[ ], boolean)
+ * 	 * org.springframework.beans.factory.support.AbstractBeanFactory.getBean(java.lang.String, java.lang.Class)
+ * 	 *
+ *
+ *
  */
 class ConfigurationClassEnhancer {
 
@@ -298,6 +350,9 @@ class ConfigurationClassEnhancer {
 
 
 	/**
+	 *
+	 * 拦截任何bean注释方法的调用，以确保正确处理bean语义(如范围和AOP代理)。
+	 *
 	 * Intercepts the invocation of any {@link Bean}-annotated methods in order to ensure proper
 	 * handling of bean semantics such as scoping and AOP proxying.
 	 * @see Bean
@@ -308,6 +363,8 @@ class ConfigurationClassEnhancer {
 		/**
 		 * Enhance a {@link Bean @Bean} method to check the supplied BeanFactory for the
 		 * existence of this bean object.
+		 *
+		 * 增强@Bean方法，以检查所提供的BeanFactory是否存在此bean对象。
 		 * @throws Throwable as a catch-all for any exception that may be thrown when invoking the
 		 * super implementation of the proxied method i.e., the actual {@code @Bean} method
 		 */
@@ -317,11 +374,11 @@ class ConfigurationClassEnhancer {
 					MethodProxy cglibMethodProxy) throws Throwable {
 
 			ConfigurableBeanFactory beanFactory = getBeanFactory(enhancedConfigInstance);
-			String beanName = BeanAnnotationHelper.determineBeanNameFor(beanMethod);
+			String beanName = org.springframework.context.annotation.BeanAnnotationHelper.determineBeanNameFor(beanMethod);
 
 			// Determine whether this bean is a scoped-proxy
-			if (BeanAnnotationHelper.isScopedProxy(beanMethod)) {
-				String scopedBeanName = ScopedProxyCreator.getTargetBeanName(beanName);
+			if (org.springframework.context.annotation.BeanAnnotationHelper.isScopedProxy(beanMethod)) {
+				String scopedBeanName = org.springframework.context.annotation.ScopedProxyCreator.getTargetBeanName(beanName);
 				if (beanFactory.isCurrentlyInCreation(scopedBeanName)) {
 					beanName = scopedBeanName;
 				}
@@ -334,6 +391,16 @@ class ConfigurationClassEnhancer {
 			// proxy that intercepts calls to getObject() and returns any cached bean instance.
 			// This ensures that the semantics of calling a FactoryBean from within @Bean methods
 			// is the same as that of referring to a FactoryBean within XML. See SPR-6602.
+			/**
+			 * 要处理bean间方法引用的情况，必须显式地检查
+			 * //已经缓存的实例的容器。
+			 *
+			 * //首先，检查被请求的bean是否是FactoryBean。如果是，创建一个子类
+			 * //代理，它拦截对getObject()的调用并返回任何缓存的bean实例。
+			 * //这确保了从@Bean方法内部调用FactoryBean的语义
+			 * //与在XML中引用FactoryBean相同。看到spr - 6602。
+			 *
+			 */
 			if (factoryContainsBean(beanFactory, BeanFactory.FACTORY_BEAN_PREFIX + beanName) &&
 					factoryContainsBean(beanFactory, beanName)) {
 				Object factoryBean = beanFactory.getBean(BeanFactory.FACTORY_BEAN_PREFIX + beanName);
@@ -347,6 +414,9 @@ class ConfigurationClassEnhancer {
 			}
 
 			if (isCurrentlyInvokedFactoryMethod(beanMethod)) {
+				/**
+				 * //工厂调用bean方法来实例化和注册bean调用该方法的超级实现来实际//创建bean实例。
+				 */
 				// The factory is calling the bean method in order to instantiate and register the bean
 				// (i.e. via a getBean() call) -> invoke the super implementation of the method to actually
 				// create the bean instance.
@@ -360,6 +430,22 @@ class ConfigurationClassEnhancer {
 									"these container lifecycle issues; see @Bean javadoc for complete details.",
 							beanMethod.getDeclaringClass().getSimpleName(), beanMethod.getName()));
 				}
+				/**
+				 *
+				 * org.springframework.cglib.proxy.MethodProxy.invokeSuper(java.lang.Object, java.lang.Object[ ])
+				 * org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(java.lang.Object, java.lang.reflect.Method, java.lang.Object[ ], org.springframework.cglib.proxy.MethodProxy)
+				 * org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$5cecf520.transactionAdvisor()
+				 * org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(org.springframework.beans.factory.support.RootBeanDefinition, java.lang.String, org.springframework.beans.factory.BeanFactory, java.lang.Object, java.lang.reflect.Method, java.lang.Object[ ])
+				 * org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+				 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+				 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+				 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+				 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+				 * org.springframework.beans.factory.support.AbstractBeanFactory$1.getObject()
+				 * org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(java.lang.String, org.springframework.beans.factory.ObjectFactory)
+				 * org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(java.lang.String, java.lang.Class, java.lang.Object[ ], boolean)
+				 *
+				 */
 				return cglibMethodProxy.invokeSuper(enhancedConfigInstance, beanMethodArgs);
 			}
 
@@ -420,7 +506,7 @@ class ConfigurationClassEnhancer {
 				}
 				Method currentlyInvoked = SimpleInstantiationStrategy.getCurrentlyInvokedFactoryMethod();
 				if (currentlyInvoked != null) {
-					String outerBeanName = BeanAnnotationHelper.determineBeanNameFor(currentlyInvoked);
+					String outerBeanName = org.springframework.context.annotation.BeanAnnotationHelper.determineBeanNameFor(currentlyInvoked);
 					beanFactory.registerDependentBean(beanName, outerBeanName);
 				}
 				return beanInstance;
@@ -436,7 +522,7 @@ class ConfigurationClassEnhancer {
 		public boolean isMatch(Method candidateMethod) {
 			return (candidateMethod.getDeclaringClass() != Object.class &&
 					!BeanFactoryAwareMethodInterceptor.isSetBeanFactory(candidateMethod) &&
-					BeanAnnotationHelper.isBeanAnnotated(candidateMethod));
+					org.springframework.context.annotation.BeanAnnotationHelper.isBeanAnnotated(candidateMethod));
 		}
 
 		private ConfigurableBeanFactory getBeanFactory(Object enhancedConfigInstance) {

@@ -12,6 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ *
+ *
  */
 
 package org.springframework.context.event;
@@ -53,6 +56,43 @@ import org.springframework.util.CollectionUtils;
  * Implements {@link BeanFactoryPostProcessor} (as of 5.1) primarily for early retrieval,
  * avoiding AOP checks for this processor bean and its {@link EventListenerFactory} delegates.
  *
+ *
+ * EventListenerMethodProcessor 是 BeanFactory 的一个后置处理器, 用来对 @EventListener 提供支持.
+ *
+ * 主要是标注了 @EventListener 的方法进行解析, 然后转换为一个 ApplicationListener.
+ *
+ * 1. 在 refresh 容器的时候, 调用 invokeBeanFactoryPostProcessors() 方法时, 会执行 BeanFactoryPostProcessor#postProcessBeanFactory() 方法.
+ *
+ * 　　此方法中, 他只是设置了一个默认的监听器工厂 : DefaultEventListenerFactory
+ *
+ * 2. 他实现了 SmartInitializingSingleton 接口, 会在
+ *
+ * 　　org.springframework.context.support.AbstractApplicationContext#refresh
+ *
+ * 　　\|/
+ *
+ * 　　org.springframework.context.support.AbstractApplicationContext#finishBeanFactoryInitialization
+ *
+ * 　　\|/
+ *
+ * 　　org.springframework.beans.factory.support.DefaultListableBeanFactory#preInstantiateSingletons 方法中调用其 afterSingletonsInstantiated() 方法.
+ *
+ * 　　其调用时机是, 遍历容器中注册的 BeanDefinition, 调用所有 getBean() 方法之后, 才会开始遍历执行 afterSingletonsInstantiated() 方法.
+ *
+ * 　　这里最终会调用 processBean() 方法.
+ *
+ * 　　此方法中, 就会去容器中查找标注了 @EventListener 注解的方法, 然后进行转换.
+ *
+ * ----------------------
+ * - 109 ms - 1 hot spot inv. org.springframework.context.event.EventListenerMethodProcessor.afterSingletonsInstantiated
+ *   100.0% - 109 ms - 1 hot spot inv. org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons
+ *   100.0% - 109 ms - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization
+ *   100.0% - 109 ms - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.refresh
+ *   100.0% - 109 ms - 1 hot spot inv. org.springframework.boot.SpringApplication.refresh
+ *   100.0% - 109 ms - 1 hot spot inv. org.springframework.boot.SpringApplication.createAndRefreshContext
+ *   100.0% - 109 ms - 1 hot spot inv. org.springframework.boot.SpringApplication.run
+ *   100.0% - 109 ms - 1 hot spot inv. org.springframework.boot.SpringApplication.run
+ *
  * @author Stephane Nicoll
  * @author Juergen Hoeller
  * @since 4.2
@@ -71,7 +111,7 @@ public class EventListenerMethodProcessor
 	private ConfigurableListableBeanFactory beanFactory;
 
 	@Nullable
-	private List<EventListenerFactory> eventListenerFactories;
+	private List<org.springframework.context.event.EventListenerFactory> eventListenerFactories;
 
 	private final EventExpressionEvaluator evaluator = new EventExpressionEvaluator();
 
@@ -89,8 +129,8 @@ public class EventListenerMethodProcessor
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		this.beanFactory = beanFactory;
 
-		Map<String, EventListenerFactory> beans = beanFactory.getBeansOfType(EventListenerFactory.class, false, false);
-		List<EventListenerFactory> factories = new ArrayList<>(beans.values());
+		Map<String, org.springframework.context.event.EventListenerFactory> beans = beanFactory.getBeansOfType(org.springframework.context.event.EventListenerFactory.class, false, false);
+		List<org.springframework.context.event.EventListenerFactory> factories = new ArrayList<>(beans.values());
 		AnnotationAwareOrderComparator.sort(factories);
 		this.eventListenerFactories = factories;
 	}
@@ -169,16 +209,16 @@ public class EventListenerMethodProcessor
 				// Non-empty set of methods
 				ConfigurableApplicationContext context = this.applicationContext;
 				Assert.state(context != null, "No ApplicationContext set");
-				List<EventListenerFactory> factories = this.eventListenerFactories;
+				List<org.springframework.context.event.EventListenerFactory> factories = this.eventListenerFactories;
 				Assert.state(factories != null, "EventListenerFactory List not initialized");
 				for (Method method : annotatedMethods.keySet()) {
-					for (EventListenerFactory factory : factories) {
+					for (org.springframework.context.event.EventListenerFactory factory : factories) {
 						if (factory.supportsMethod(method)) {
 							Method methodToUse = AopUtils.selectInvocableMethod(method, context.getType(beanName));
 							ApplicationListener<?> applicationListener =
 									factory.createApplicationListener(beanName, targetType, methodToUse);
-							if (applicationListener instanceof ApplicationListenerMethodAdapter) {
-								((ApplicationListenerMethodAdapter) applicationListener).init(context, this.evaluator);
+							if (applicationListener instanceof org.springframework.context.event.ApplicationListenerMethodAdapter) {
+								((org.springframework.context.event.ApplicationListenerMethodAdapter) applicationListener).init(context, this.evaluator);
 							}
 							context.addApplicationListener(applicationListener);
 							break;

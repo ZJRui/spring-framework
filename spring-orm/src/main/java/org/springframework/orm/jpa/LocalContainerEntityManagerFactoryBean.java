@@ -87,7 +87,7 @@ import org.springframework.util.ClassUtils;
  * @see javax.persistence.spi.PersistenceProvider#createContainerEntityManagerFactory
  */
 @SuppressWarnings("serial")
-public class LocalContainerEntityManagerFactoryBean extends AbstractEntityManagerFactoryBean
+public class LocalContainerEntityManagerFactoryBean extends org.springframework.orm.jpa.AbstractEntityManagerFactoryBean
 		implements ResourceLoaderAware, LoadTimeWeaverAware {
 
 	@Nullable
@@ -341,6 +341,30 @@ public class LocalContainerEntityManagerFactoryBean extends AbstractEntityManage
 		super.afterPropertiesSet();
 	}
 
+	/**
+	 * org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl.build	 263 ms (0 %)	263 ms	1
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.orm.jpa.vendor.SpringHibernateJpaPersistenceProvider.createContainerEntityManagerFactory
+	 *   0.0% - 263 ms - 1 hot spot inv. javax.persistence.spi.PersistenceProvider.createContainerEntityManagerFactory
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean.createNativeEntityManagerFactory
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.afterPropertiesSet
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory$1.getObject
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.beans.factory.support.AbstractBeanFactory.getBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.getBean
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.context.support.AbstractApplicationContext.refresh
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.boot.SpringApplication.refresh
+	 *   0.0% - 263 ms - 1 hot spot inv. org.springframework.boot.SpringApplication.createAndRefreshContext
+	 *
+	 *
+	 * @return
+	 * @throws PersistenceException
+	 */
 	@Override
 	protected EntityManagerFactory createNativeEntityManagerFactory() throws PersistenceException {
 		Assert.state(this.persistenceUnitInfo != null, "PersistenceUnitInfo not initialized");

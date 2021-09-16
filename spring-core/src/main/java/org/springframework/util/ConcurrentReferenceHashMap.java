@@ -53,6 +53,13 @@ import org.springframework.lang.Nullable;
  * <p>If not explicitly specified, this implementation will use
  * {@linkplain SoftReference soft entry references}.
  *
+ * 一个对键和值都使用软引用或弱引用的ConcurrentHashMap。
+ * 这个类可以用作集合的替代。synchronizedMap(新WeakHashMap<K, Reference<V>>())，
+ * 以便在并发访问时支持更好的性能。此实现遵循与ConcurrentHashMap相同的设计约束，只是支持空值和空键。
+ * 注意:引用的使用意味着不能保证放置在地图中的项目在以后仍然可用。垃圾回收器可以在任何时候丢弃引用，因此可能会出现一个未知线程正在静默地删除条目的情况。
+ * 如果没有明确指定，这个实现将使用软输入
+ *
+ *
  * @author Phillip Webb
  * @author Juergen Hoeller
  * @since 3.2
