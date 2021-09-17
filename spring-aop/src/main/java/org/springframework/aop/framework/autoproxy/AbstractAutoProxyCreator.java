@@ -122,7 +122,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	private boolean applyCommonInterceptorsFirst = true;
 
 	@Nullable
-	private TargetSourceCreator[] customTargetSourceCreators;
+	private org.springframework.aop.framework.autoproxy.TargetSourceCreator[] customTargetSourceCreators;
 
 	@Nullable
 	private BeanFactory beanFactory;
@@ -175,7 +175,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * Ordering is significant: The {@code TargetSource} returned from the first matching
 	 * {@code TargetSourceCreator} (that is, the first that returns non-null) will be used.
 	 */
-	public void setCustomTargetSourceCreators(TargetSourceCreator... targetSourceCreators) {
+	public void setCustomTargetSourceCreators(org.springframework.aop.framework.autoproxy.TargetSourceCreator... targetSourceCreators) {
 		this.customTargetSourceCreators = targetSourceCreators;
 	}
 
@@ -236,6 +236,26 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		return wrapIfNecessary(bean, beanName, cacheKey);
 	}
 
+	/**
+	 *
+	 * 调用栈，从底部向上开始： 注意这里的getObject的时候进行的，不同于wrapIfNecessary，wrapIfNecessary是在bean创建之后对Bean进行代理，这里是在Bean创建之前进行拦截
+	 *
+	 *org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.postProcessBeforeInstantiation(java.lang.Class, java.lang.String)
+	 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInstantiation(java.lang.Class, java.lang.String)
+	 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.resolveBeforeInstantiation(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition)
+	 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+	 * org.springframework.beans.factory.support.AbstractBeanFactory$1.getObject()
+	 * org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(java.lang.String, org.springframework.beans.factory.ObjectFactory)
+	 * org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(java.lang.String, java.lang.Class, java.lang.Object[ ], boolean)
+	 * org.springframework.beans.factory.support.AbstractBeanFactory.getBean(java.lang.String)
+	 * org.springframework.context.support.AbstractApplicationContext.getBean(java.lang.String)
+	 * org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(org.springframework.beans.factory.config.ConfigurableListableBeanFactory)
+	 * context.refresh
+	 *
+	 * @param beanClass
+	 * @param beanName
+	 * @return
+	 */
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
 		Object cacheKey = getCacheKey(beanClass, beanName);
@@ -256,6 +276,19 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			//如果是基础组件，或者应该跳过
 			//如果允许跳过或者是基础组件 则会被放入到advisedbeans中。否则将不会放入到advisedBeans中。
 			//因此这里我们得出结论： advisedBeans中存放的是 基础AOP组件以及应该被跳过的Bean。
+			/**
+			 * isInfrastructureClass方法会 查找Annotation
+			 *
+			 * org.springframework.core.annotation.AnnotationUtils.findAnnotation(java.lang.Class, java.lang.Class, boolean)
+			 * org.springframework.core.annotation.AnnotationUtils.findAnnotation(java.lang.Class, java.lang.Class)
+			 * org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactory.hasAspectAnnotation(java.lang.Class)
+			 * org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactory.isAspect(java.lang.Class)
+			 * org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator.isInfrastructureClass(java.lang.Class)
+			 * org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator.postProcessBeforeInstantiation(java.lang.Class, java.lang.String)
+			 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInstantiation(java.lang.Class, java.lang.String)
+			 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.resolveBeforeInstantiation(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition)
+			 * org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(java.lang.String, org.springframework.beans.factory.support.RootBeanDefinition, java.lang.Object[ ])
+			 */
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
@@ -349,6 +382,13 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
+			/**
+			 *
+			 * 这里调用createProxy为Bean对象创建代理，
+			 * 参考文章 A文档-事务-》@Transactional定义在接口方法上
+			 *
+			 *
+			 */
 			Object proxy = createProxy(
 					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
 			this.proxyTypes.put(cacheKey, proxy.getClass());
@@ -398,7 +438,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @see org.springframework.beans.factory.config.AutowireCapableBeanFactory#ORIGINAL_INSTANCE_SUFFIX
 	 */
 	protected boolean shouldSkip(Class<?> beanClass, String beanName) {
-		return AutoProxyUtils.isOriginalInstance(beanName, beanClass);
+		return org.springframework.aop.framework.autoproxy.AutoProxyUtils.isOriginalInstance(beanName, beanClass);
 	}
 
 	/**
@@ -422,7 +462,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		// We can't create fancy target sources for directly registered singletons.我们不能为直接注册的单例创建花哨的目标源。
 		if (this.customTargetSourceCreators != null &&
 				this.beanFactory != null && this.beanFactory.containsBean(beanName)) {
-			for (TargetSourceCreator tsc : this.customTargetSourceCreators) {
+			for (org.springframework.aop.framework.autoproxy.TargetSourceCreator tsc : this.customTargetSourceCreators) {
 				TargetSource ts = tsc.getTargetSource(beanClass, beanName);
 				if (ts != null) {
 					// Found a matching TargetSource.
@@ -454,7 +494,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			@Nullable Object[] specificInterceptors, TargetSource targetSource) {
 
 		if (this.beanFactory instanceof ConfigurableListableBeanFactory) {
-			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
+			org.springframework.aop.framework.autoproxy.AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
 		}
 
 		ProxyFactory proxyFactory = new ProxyFactory();
@@ -508,7 +548,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 */
 	protected boolean shouldProxyTargetClass(Class<?> beanClass, @Nullable String beanName) {
 		return (this.beanFactory instanceof ConfigurableListableBeanFactory &&
-				AutoProxyUtils.shouldProxyTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName));
+				org.springframework.aop.framework.autoproxy.AutoProxyUtils.shouldProxyTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName));
 	}
 
 	/**

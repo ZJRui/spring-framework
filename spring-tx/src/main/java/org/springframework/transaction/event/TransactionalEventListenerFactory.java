@@ -48,12 +48,15 @@ public class TransactionalEventListenerFactory implements EventListenerFactory, 
 
 	@Override
 	public boolean supportsMethod(Method method) {
-		return AnnotatedElementUtils.hasAnnotation(method, TransactionalEventListener.class);
+		return AnnotatedElementUtils.hasAnnotation(method, org.springframework.transaction.event.TransactionalEventListener.class);
 	}
 
 	@Override
 	public ApplicationListener<?> createApplicationListener(String beanName, Class<?> type, Method method) {
-		return new TransactionalApplicationListenerMethodAdapter(beanName, type, method);
+		/**
+		 * 参考  EventListenerMethodProcessor
+		 */
+		return new org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter(beanName, type, method);
 	}
 
 }
