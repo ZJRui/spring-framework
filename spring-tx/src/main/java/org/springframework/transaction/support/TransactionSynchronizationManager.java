@@ -122,7 +122,7 @@ public abstract class TransactionSynchronizationManager {
 	 * @see ResourceTransactionManager#getResourceFactory()
 	 */
 	public static boolean hasResource(Object key) {
-		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
+		Object actualKey = org.springframework.transaction.support.TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
 		Object value = doGetResource(actualKey);
 		return (value != null);
 	}
@@ -136,7 +136,7 @@ public abstract class TransactionSynchronizationManager {
 	 */
 	@Nullable
 	public static Object getResource(Object key) {
-		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
+		Object actualKey = org.springframework.transaction.support.TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
 		return doGetResource(actualKey);
 	}
 
@@ -151,7 +151,7 @@ public abstract class TransactionSynchronizationManager {
 		}
 		Object value = map.get(actualKey);
 		// Transparently remove ResourceHolder that was marked as void...
-		if (value instanceof ResourceHolder && ((ResourceHolder) value).isVoid()) {
+		if (value instanceof org.springframework.transaction.support.ResourceHolder && ((org.springframework.transaction.support.ResourceHolder) value).isVoid()) {
 			map.remove(actualKey);
 			// Remove entire ThreadLocal if empty...
 			if (map.isEmpty()) {
@@ -170,7 +170,7 @@ public abstract class TransactionSynchronizationManager {
 	 * @see ResourceTransactionManager#getResourceFactory()
 	 */
 	public static void bindResource(Object key, Object value) throws IllegalStateException {
-		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
+		Object actualKey = org.springframework.transaction.support.TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
 		Assert.notNull(value, "Value must not be null");
 		Map<Object, Object> map = resources.get();
 		// set ThreadLocal Map if none found
@@ -180,7 +180,7 @@ public abstract class TransactionSynchronizationManager {
 		}
 		Object oldValue = map.put(actualKey, value);
 		// Transparently suppress a ResourceHolder that was marked as void...
-		if (oldValue instanceof ResourceHolder && ((ResourceHolder) oldValue).isVoid()) {
+		if (oldValue instanceof org.springframework.transaction.support.ResourceHolder && ((org.springframework.transaction.support.ResourceHolder) oldValue).isVoid()) {
 			oldValue = null;
 		}
 		if (oldValue != null) {
@@ -197,7 +197,7 @@ public abstract class TransactionSynchronizationManager {
 	 * @see ResourceTransactionManager#getResourceFactory()
 	 */
 	public static Object unbindResource(Object key) throws IllegalStateException {
-		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
+		Object actualKey = org.springframework.transaction.support.TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
 		Object value = doUnbindResource(actualKey);
 		if (value == null) {
 			throw new IllegalStateException("No value for key [" + actualKey + "] bound to thread");
@@ -212,7 +212,7 @@ public abstract class TransactionSynchronizationManager {
 	 */
 	@Nullable
 	public static Object unbindResourceIfPossible(Object key) {
-		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
+		Object actualKey = org.springframework.transaction.support.TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
 		return doUnbindResource(actualKey);
 	}
 
@@ -231,7 +231,7 @@ public abstract class TransactionSynchronizationManager {
 			resources.remove();
 		}
 		// Transparently suppress a ResourceHolder that was marked as void...
-		if (value instanceof ResourceHolder && ((ResourceHolder) value).isVoid()) {
+		if (value instanceof org.springframework.transaction.support.ResourceHolder && ((org.springframework.transaction.support.ResourceHolder) value).isVoid()) {
 			value = null;
 		}
 		return value;
@@ -246,6 +246,11 @@ public abstract class TransactionSynchronizationManager {
 	 * Return if transaction synchronization is active for the current thread.
 	 * Can be called before register to avoid unnecessary instance creation.
 	 * @see #registerSynchronization
+	 *
+	 *
+	 * isSynchronizationActive这个方法不是用来判断当前线程中是否存在事务的，具体参考脑 当前类中的isActualTransactionActive方法
+	 *
+	 *
 	 */
 	public static boolean isSynchronizationActive() {
 		return (synchronizations.get() != null);
@@ -437,6 +442,54 @@ public abstract class TransactionSynchronizationManager {
 	 * transaction being active (with backing resource transaction;
 	 * on PROPAGATION_REQUIRED, PROPAGATION_REQUIRES_NEW, etc).
 	 * @see #isSynchronizationActive()
+	 *
+	 * 	 *
+	 * 	 *
+	 * 	 *
+	 * 	 * *返回当前是否有一个实际的活动事务。
+	 * 	 * 这表示当前线程是否与实际的线程相关联
+	 * 	 * *事务而不是只与活动事务同步。
+	 * 	 * * <p>被想要区别对待的资源管理代码调用
+	 * 	 * *在活动事务同步之间(有或没有支持)
+	 * 	 * *资源事务;也在PROPAGATION_SUPPORTS上)和实际的
+	 * 	 * *事务是活动的(支持资源事务;
+	 * 	 * * on PROPAGATION_REQUIRED, PROPAGATION_REQUIRES_NEW，等等)。
+	 * 	 *
+	 * 	 *  两个概念
+	 * 	 * 	 * （1） just with active transaction synchronization.
+	 * 	 * 	 * （2）there currently is an actual transaction active.
+	 * 	 * 	 *
+	 * 	 * 	 * 该方法的实现原理是 Manager 的 ThreadLocal<Boolean> actualTransactionActive 中是否有值
+	 * 	 *
+	 * 	 * 	 在 AbstractPlatformTransactionManager的getTransaction方法中会调用 TransactionManager的
+	 * 	 * 	 	prepareSynchronization(status, definition);
+	 * 	 * 	 prepare方法的实现如下	： 会调用setActualTransactionActive方法 标记位事务开启
+	 * 	 * 	 	    TransactionSynchronizationManager.setActualTransactionActive(status.hasTransaction());
+	 * 	 * 			TransactionSynchronizationManager.setCurrentTransactionIsolationLevel(
+	 * 	 * 					definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT ?
+	 * 	 * 							definition.getIsolationLevel() : null);
+	 * 	 * 			TransactionSynchronizationManager.setCurrentTransactionReadOnly(definition.isReadOnly());
+	 * 	 * 			TransactionSynchronizationManager.setCurrentTransactionName(definition.getName());
+	 * 	 * 			TransactionSynchronizationManager.initSynchronization();
+	 * 	 * 	 *
+	 *
+	 *=======================
+	 * 对于DataSourceTransactionManager来说，事务真正开启的地方是在 ：  org.springframework.jdbc.datasource.DataSourceTransactionManager#doBegin
+	 *
+	 * ：Mysql中TransactionManager getTransaction返回的事务对象是什么对象？ DataSourceTransactionManager 返回DataSourceTransactionObject
+	 * 			 * 在DataSourceTransactionManager的实现中 直接new了一个 DataSourceTransactionObject作为事务对象， 他没有考虑当前线程是否已经存在数据库事务。
+	 * 			 * 因此也就是 同一个数据库事务 可以有多个Spring中的事务对象（DataSourceTransactionObject），也就是说
+	 * 			 * 不同的DataSourceTransactionObject对象可能会表示相同的数据库事务对象。Spring中的事务对象和数据库中开启的事务不是等价的。
+	 * DataSourceTransactoinManager 的getTransaction方法返回了事务对象DataSourceTransactionObject， 但是这个事务对象是怎么使用的呢？
+	 * 			 * 实际上这个事务对象 DataSourceTransactionObject内有一个ConnectionHolder 属性，他用来持有连接connection。
+	 * 			 * 在TransactionManager的doBegin的时候，在DataSourceTransactionManager的doBegin方法实现中会真正获取connection，然后将connection设置到 事务对象DataSourceTransactionObject中
+	 * 			 * ，因此我们说是spring中的事务本质上是 持有了一个connection
+	 *
+	 * 在doBegin方法中会调用： con.setAutoCommit(false); 	txObject.getConnectionHolder().setTransactionActive(true); 来标记事务开启
+	 * 同时将connection绑定到ThreadLocal中
+	 * 	TransactionSynchronizationManager.bindResource(obtainDataSource(), txObject.getConnectionHolder());
+	 *
+	 *
 	 */
 	public static boolean isActualTransactionActive() {
 		return (actualTransactionActive.get() != null);
