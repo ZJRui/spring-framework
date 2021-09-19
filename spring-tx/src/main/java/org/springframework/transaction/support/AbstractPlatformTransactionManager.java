@@ -405,7 +405,12 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 			}
 			try {
 				/**
-				 * 注意startTransaction方法中调用了prepareSynchronization 方法
+				 * 注意startTransaction方法中调用了prepareSynchronization 方法。
+				 *
+				 * 注意：这里我们将上面 doGetTransaction方法返回的事务对象 transaction交给了startTransaction方法
+				 * 最终会创建一个TransactionStatus对象，并将这个transaction对象交个TransactionStatus。
+				 *
+				 *
 				 */
 				return startTransaction(def, transaction, debugEnabled, suspendedResources);
 			}
@@ -423,6 +428,18 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 			boolean newSynchronization = (getTransactionSynchronization() == SYNCHRONIZATION_ALWAYS);
 			/**
 			 * 注意这个prepareTransactionStatus方法中调用了 prepareSynchronization方法
+			 *
+			 * 注意这里 的第二个参数是null，这会导致 创建的TransactionStatus对象的transaction属性为null，我们可以根据这个属性来判断当前是否存在事务
+			 *
+			 *
+			 问题：为什么可以依据TransactionStatus中的transaction来 判断是否存在事务呢？
+			 * 	 * 因为我们之前分析过 在Spring的getTransaction方法中，第一步就是调用了doGetTransaction方法 来创建一个DataSourceTransactionObject作为事务对象
+			 * 	 * 然后这个事务对象DataSourceTransactionObject又会根据当前事务的级别：是否需要事务，是否需要创建新的事务 ，
+			 * 	 * 最终这个事务对象被交给了DefaultTransactionStatus对象中。但是我们注意到如果事务级别是不需要事务，
+			 * 	 * 这个时候我们创建了一个DefaultTransactionStatus对象，但是传递的transaction是null，表示他是一个空事务；
+			 * 	 * 当事务的级别是需要事务的时候我们会将doGetTransaction返回的事务对象交给DefaultTransactionStatus对象，
+			 * 	 * 因此在TransactionStatus中 可以通过TransactionStatus的transaction属性是否为空来判断当前是否存在事务
+			 *
 			 */
 			return prepareTransactionStatus(def, null, true, newSynchronization, debugEnabled, null);
 		}
