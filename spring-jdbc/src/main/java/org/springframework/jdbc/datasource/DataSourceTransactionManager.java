@@ -165,11 +165,11 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 	 * @see org.springframework.transaction.jta.JtaTransactionManager
 	 */
 	public void setDataSource(@Nullable DataSource dataSource) {
-		if (dataSource instanceof TransactionAwareDataSourceProxy) {
+		if (dataSource instanceof org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy) {
 			// If we got a TransactionAwareDataSourceProxy, we need to perform transactions
 			// for its underlying target DataSource, else data access code won't see
 			// properly exposed transactions (i.e. transactions for the target DataSource).
-			this.dataSource = ((TransactionAwareDataSourceProxy) dataSource).getTargetDataSource();
+			this.dataSource = ((org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy) dataSource).getTargetDataSource();
 		} else {
 			this.dataSource = dataSource;
 		}
@@ -298,7 +298,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 			 * 	事务的隔离级别是通过数据库的锁来实现的，这个是数据库的实现，程序无需关心
 			 *
 			 */
-			Integer previousIsolationLevel = DataSourceUtils.prepareConnectionForTransaction(con, definition);
+			Integer previousIsolationLevel = org.springframework.jdbc.datasource.DataSourceUtils.prepareConnectionForTransaction(con, definition);
 			txObject.setPreviousIsolationLevel(previousIsolationLevel);
 			txObject.setReadOnly(definition.isReadOnly());
 
@@ -309,7 +309,29 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 		//因此我们不想做不必要的(例如，如果我们已经显式地
 		//配置连接池来设置它)。
 			/**
-			 * 这里表示开启事务
+			 *
+			 * 这里可以解释 开启事务
+			 *
+			 * doBegin方法中并没有 执行 “start transaction”这样的sql语句来显示开启一个事务，而且在数据库驱动（mysql-connector-java）的实现中也搜不到 start transaction 这样的sql语句，那么事务到底是怎么开启的呢？
+			 *
+			 *
+			 * 原来，当你获取到连接的时候，默认情况下每执行一条语句都会自动创建一个事务，当我们设置了autoCommit为false的情况下，多个sql语句自动合并到一个事务中，只有你执行了commit的时候事务才会提交，因此不需要使用start transaction语句 。参考下文官方文档。
+			 * 在NativeCat中 模拟如下场景：
+			 * （1）新建查询，打开一个connection
+			 * （2）执行 ： set autocommit0
+			 * （3）执行update
+			 * （4）查看数据并没有发现修改后的值
+			 * （5）执行 commit 后发现修改后的值
+			 * 这就解释了开启事务不需要使用start  transaction ,只需要设置 autoCommit为false， 在 DataSourceTransactionManager的doBegin方法中就将autoCommit设置为false表示开启了一个事务。
+			 *
+			 * 创建连接时，它处于自动提交模式。这意味着每个单独的SQL语句都被视为一个事务，并在执行后立即自动提交。(更准确地说，默认是在SQL语句完成时提交，而不是在执行时提交。当检索到语句的所有结果集和更新计数时，语句就完成了。然而，在几乎所有情况下，语句都是在执行之后完成并提交的。)
+			 * 允许将两个或多个语句分组到一个事务中的方法是禁用自动提交模式。下面的代码演示了这一点，其中con是一个活动连接:
+			 * con.setAutoCommit(false);
+			 * 因此也就是说 实际上数据库的事务不是我们手动开启的，默认情况下每一条sql语句都会有一个事务，
+			 * 在实际应用中我们需要做的 不是开启事务，而是将多个语句放置到一个事务中执行，这个是通过 将autoCommit设置为false来实现的。
+			 *
+			 * https://docs.oracle.com/javase/tutorial/jdbc/basics/transactions.html
+			 *
 			 *
 			 */
 			if (con.getAutoCommit()) {
@@ -320,9 +342,6 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 				con.setAutoCommit(false);
 			}
 
-			/**
-			 *  z这个地方表示开启事务
-			 */
 			prepareTransactionalConnection(con, definition);
 			txObject.getConnectionHolder().setTransactionActive(true);
 
@@ -337,7 +356,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 			}
 		} catch (Throwable ex) {
 			if (txObject.isNewConnectionHolder()) {
-				DataSourceUtils.releaseConnection(con, obtainDataSource());
+				org.springframework.jdbc.datasource.DataSourceUtils.releaseConnection(con, obtainDataSource());
 				txObject.setConnectionHolder(null, false);
 			}
 			throw new CannotCreateTransactionException("Could not open JDBC Connection for transaction", ex);
@@ -409,7 +428,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 			if (txObject.isMustRestoreAutoCommit()) {
 				con.setAutoCommit(true);
 			}
-			DataSourceUtils.resetConnectionAfterTransaction(
+			org.springframework.jdbc.datasource.DataSourceUtils.resetConnectionAfterTransaction(
 					con, txObject.getPreviousIsolationLevel(), txObject.isReadOnly());
 		} catch (Throwable ex) {
 			logger.debug("Could not reset JDBC Connection after transaction", ex);
@@ -419,7 +438,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 			if (logger.isDebugEnabled()) {
 				logger.debug("Releasing JDBC Connection [" + con + "] after transaction");
 			}
-			DataSourceUtils.releaseConnection(con, this.dataSource);
+			org.springframework.jdbc.datasource.DataSourceUtils.releaseConnection(con, this.dataSource);
 		}
 
 		txObject.getConnectionHolder().clear();
@@ -478,7 +497,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 	 * DataSource transaction object, representing a ConnectionHolder.
 	 * Used as transaction object by DataSourceTransactionManager.
 	 */
-	private static class DataSourceTransactionObject extends JdbcTransactionObjectSupport {
+	private static class DataSourceTransactionObject extends org.springframework.jdbc.datasource.JdbcTransactionObjectSupport {
 
 		private boolean newConnectionHolder;
 
