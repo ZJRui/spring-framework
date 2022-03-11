@@ -135,7 +135,7 @@ public class PropertyComparator<T> implements Comparator<T> {
 	 */
 	public static void sort(List<?> source, SortDefinition sortDefinition) throws BeansException {
 		if (StringUtils.hasText(sortDefinition.getProperty())) {
-			source.sort(new PropertyComparator<>(sortDefinition));
+			//source.sort(new PropertyComparator<>(sortDefinition));
 		}
 	}
 

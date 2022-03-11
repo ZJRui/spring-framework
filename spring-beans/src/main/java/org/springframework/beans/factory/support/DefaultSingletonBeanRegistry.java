@@ -192,6 +192,20 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 							if (singletonFactory != null) {
 								singletonObject = singletonFactory.getObject();
+								/**
+								 * 关于singletonFactories和 earlySingletonObjects的区别
+								 * singletonFactories表示 beanName->ObjectFactory的映射
+								 * setter注入造成的循环依赖的解决方式是在 实例化Bean对象之后，populate属性填充之前，创建Bean的ObjectFactory对象进行提早曝光。 当BeanA对象 在进行属性填充式引起BeanB对象的创建，然后BeanB对象在进行属性填充时根据BeanA的名称 寻找Bean。
+								 * IOC容器获取bean的时候首先从单例缓存中获取，然后从singletonFactories中加载， 就会得到被曝光的ObjectFactory，使用这个ObjectFactory的getObject方法就能获取到BeanA对象。
+								 *
+								 * 也就在populate属性方法之前会调用addSingleFactory方法将 beanName->ObjectFactory映射对放入到singleFactories中。
+								 * 当BeanB 设置属性A的时候 就会通过IOC容器get beanA，这个时候 容器首先在单例缓存singletonObjects中查找。
+								 * 如果没找到则在singletonFactories中查找， 在这个里面查找到得到的就是ObjectFactory，然后调用其getObject方法得到beanA
+								 *
+								 * 一旦得到BeanA之后 就将BeanA的ObjectFactory从 singletonFactories中移除了，然后 将BeanA放置到了earlySingletonObjects
+								 * 因此我们说earlySingletonObjects 其实是保存着存在循环引用的对象。
+								 *
+								 */
 								this.earlySingletonObjects.put(beanName, singletonObject);
 								this.singletonFactories.remove(beanName);
 							}
