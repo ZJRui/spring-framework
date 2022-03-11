@@ -133,6 +133,21 @@ import org.springframework.util.StringValueResolver;
  * the latter configuration will override the former for properties wired through
  * both approaches.
  *
+ * org.springframework.beans.factory.config.BeanPostProcessor 实现，支持开箱即用的常见 Java 注释，特别是 javax.annotation 包中的 JSR-250 注释。许多 Java EE 5 技术（例如 JSF 1.2）以及 Java 6 的 JAX-WS 都支持这些常见的 Java 注释。
+ * 这个后处理器包括对 PostConstruct 和 PreDestroy 注释的支持——分别作为 init 注释和 destroy 注释——通过从具有预配置注释类型的 InitDestroyAnnotationBeanPostProcessor 继承。
+ * 中心元素是用于注解驱动注入命名 bean 的资源注解，默认情况下来自包含 Spring BeanFactory，只有在 JNDI 中解析的 mappedName 引用。 “alwaysUseJndiLookup”标志对名称引用和默认名称强制执行等效于标准 Java EE 5 资源注入的 JNDI 查找。目标 bean 可以是简单的 POJO，除了必须匹配的类型之外没有特殊要求。
+ * 还支持 JAX-WS WebServiceRef 注释，类似于 Resource，但具有创建特定 JAX-WS 服务端点的能力。这可以通过名称指向明确定义的资源，也可以对本地指定的 JAX-WS 服务类进行操作。最后，这个后处理器还支持 EJB 3 EJB 注释，也类似于 Resource，具有指定本地 bean 名称和全局 JNDI 名称以进行回退检索的能力。在这种情况下，目标 bean 可以是普通 POJO 以及 EJB 3 会话 Bean。
+ * 此后处理器支持的通用注释在 Java 6 (JDK 1.6) 和 Java EE 5/6 中可用（它也为其通用注释提供了一个独立的 jar，允许在任何基于 Java 5 的应用程序中使用） .
+ * 对于默认用法，将资源名称解析为 Spring bean 名称，只需在应用程序上下文中定义以下内容：
+ *    <bean class="org.springframework.context.annotation.CommonAnnotationBeanPostProcessor"/>
+ * 对于直接 JNDI 访问，将资源名称解析为 Java EE 应用程序的“java:comp/env/”命名空间中的 JNDI 资源引用，请使用以下命令：
+ *    <bean class="org.springframework.context.annotation.CommonAnnotationBeanPostProcessor">
+ *      <property name="alwaysUseJndiLookup" value="true"/>
+ *    </豆>
+ * mappedName 引用将始终在 JNDI 中解析，也允许使用全局 JNDI 名称（包括“java:”前缀）。 “alwaysUseJndiLookup”标志只影响名称引用和默认名称（从字段名称/属性名称推断）。
+ * 注意：默认的 CommonAnnotationBeanPostProcessor 将由“context:annotation-config”和“context:component-scan”XML 标签注册。如果您打算指定自定义 CommonAnnotationBeanPostProcessor bean 定义，请删除或关闭默认注释配置！
+ * 注意：注解注入将在 XML 注入之前进行；因此，对于通过这两种方法连接的属性，后一种配置将覆盖前者。
+ *
  * @author Juergen Hoeller
  * @since 2.5
  * @see #setAlwaysUseJndiLookup
@@ -500,6 +515,12 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 	/**
 	 * Obtain a resource object for the given name and type through autowiring
 	 * based on the given factory.
+	 *
+	 *
+	 * ，就像@Autowired需要AutowiredAnnotationBean-
+	 * PostProcessor为它与IoC容器牵线搭桥一样，JSR250的这些注解也同样需要一个BeanPost-
+	 * Processor帮助它们实现自身的价值。这个BeanPostProcessor就是org.springframework.context.
+	 * annotation.CommonAnnotationBeanPostProcessor，
 	 * @param factory the factory to autowire against
 	 * @param element the descriptor for the annotated field/method
 	 * @param requestingBeanName the name of the requesting bean

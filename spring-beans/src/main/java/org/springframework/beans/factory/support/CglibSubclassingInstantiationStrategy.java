@@ -129,6 +129,11 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 							"Failed to invoke constructor for CGLIB enhanced subclass [" + subclass.getName() + "]", ex);
 				}
 			}
+			/**
+			 * override不为空，用户设置了replace或者lookup，因此需要
+			 * 使用cglib动态代理将包含着两个特性所对应的逻辑的拦截增强器设置进去。
+			 *
+			 */
 			// SPR-10785: set callbacks directly on the instance instead of in the
 			// enhanced class (via the Enhancer) in order to avoid memory leaks.
 			Factory factory = (Factory) instance;

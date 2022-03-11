@@ -31,6 +31,11 @@ import org.springframework.lang.Nullable;
  * interface or derive from the {@link InstantiationAwareBeanPostProcessorAdapter}
  * class. New methods might be added to this interface even in point releases.
  *
+ *
+ * InstantiationAwareBeanPostProcessor 接口的扩展，添加了用于预测已处理 bean 的最终类型的回调。
+ * 注意：此接口为专用接口，主要供框架内部使用。 通常，应用程序提供的后处理器应该简单地实现普通的 BeanPostProcessor
+ * 接口或派生自 InstantiationAwareBeanPostProcessorAdapter 类。 即使在单点版本中，也可能会向此接口添加新方法。
+ *
  * @author Juergen Hoeller
  * @since 2.0.3
  * @see InstantiationAwareBeanPostProcessorAdapter
@@ -67,6 +72,14 @@ public interface SmartInstantiationAwareBeanPostProcessor extends InstantiationA
 	}
 
 	/**
+	 * 获取对指定 bean 的早期访问的引用，通常用于解析循环引用。
+	 * 此回调使后处理器有机会尽早公开包装器 - 即在目标 bean 实例完全初始化之前。
+	 * 暴露的对象应该等同于 postProcessBeforeInitialization / postProcessAfterInitialization
+	 * 否则会暴露的对象。 请注意，此方法返回的对象将用作 bean 引用，除非后处理器返回与所述后处理回调不同的包装器。
+	 * 换句话说：那些后处理回调可能最终暴露相同的引用，
+	 * 或者从那些后续回调中返回原始 bean 实例（如果已经为调用此方法构建了受影响 bean 的包装器，它将被暴露 默认情况下作为最终的 bean 引用）。
+	 * 默认实现按原样返回给定的 bean。
+	 *
 	 * Obtain a reference for early access to the specified bean,
 	 * typically for the purpose of resolving a circular reference.
 	 * <p>This callback gives post-processors a chance to expose a wrapper

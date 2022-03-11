@@ -88,6 +88,11 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 		}
 		else {
 			// Must generate CGLIB subclass.
+			/**
+			 * override不为空，用户设置了replace或者lookup，因此需要
+			 * 使用cglib动态代理将包含着两个特性所对应的逻辑的拦截增强器设置进去。
+			 *
+			 */
 			return instantiateWithMethodInjection(bd, beanName, owner);
 		}
 	}

@@ -582,6 +582,20 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
+
+			/**
+			 * 这里首先 创建一个ObjectFactory对象， ObjectFactory的getObject实现就是 调用getEarlyBeanReference
+			 * 然后通过addSingletonFactory方法将beanName和ObjectFactory放入到singletonFactories 中。
+			 *
+			 * 这就是 bean对象 实例化完之后 创建一个ObjectFactory进行提前暴露
+			 *
+			 * 注意这个getEarlyBeanReference方法，这个方法并不简单，他会调用SmartInstantiationAwareBeanPostProcessor的getEarlyBeanReference方法
+			 *
+			 * 而AbstractAutoProxyCreator的getEarlyBeanReference方法中会执行wrapIfNecessary，也就是进行代理
+			 *
+			 * org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator#getEarlyBeanReference(java.lang.Object, java.lang.String)
+			 *
+			 */
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 
@@ -604,6 +618,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (earlySingletonExposure) {
 			Object earlySingletonReference = getSingleton(beanName, false);
 			if (earlySingletonReference != null) {
+				//如果没有被增强，那么哪里会被增强呢？ 在上面的InitializingBean方法中 会执行applyBeanPostProcessorsAfterInitialization
+				//从而触发 AfterInitialization方法的执行，而AbstractAutoProxyCreator的postProcessAfterInitialization 会执行wrapIfNecessary
+				//从而判断bean是否有必要增强。
 				if (exposedObject == bean) {
 					exposedObject = earlySingletonReference;
 				}
@@ -1171,9 +1188,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 		if (resolved) {
 			if (autowireNecessary) {
+				//使用构造函数实例化
 				return autowireConstructor(beanName, mbd, null, null);
 			}
 			else {
+				//使用默认的构造函数对bean实例化
 				return instantiateBean(beanName, mbd);
 			}
 		}
@@ -1190,7 +1209,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (ctors != null) {
 			return autowireConstructor(beanName, mbd, ctors, null);
 		}
-
+		//使用默认的构造函数对bean实例化
 		// No special handling: simply use no-arg constructor.
 		return instantiateBean(beanName, mbd);
 	}
@@ -1289,6 +1308,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 						getAccessControlContext());
 			}
 			else {
+				/**
+				 * 使用默认的实例化策略对bean进行实例化，默认的实例化策略是Cglib策略
+				 *
+				 * 但是 这里执行的是cglib策略的instantiate方法。  实际上是org.springframework.beans.factory.support.SimpleInstantiationStrategy#instantiate(org.springframework.beans.factory.support.RootBeanDefinition, java.lang.String, org.springframework.beans.factory.BeanFactory)
+				 *
+				 * SimpleInstantiationStrategy 策略实例化对象的时候 会 使用BeanUtils Java反射实例化或者使用cglib实例化。
+				 *
+				 */
 				beanInstance = getInstantiationStrategy().instantiate(mbd, beanName, this);
 			}
 			BeanWrapper bw = new BeanWrapperImpl(beanInstance);
@@ -1361,6 +1388,27 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
 		// state of the bean before properties are set. This can be used, for example,
 		// to support styles of field injection.
+		/**
+		 * 解释 这里为什么 会调用 postProcessAfterInstantiation 方法
+		 *
+		 * BeanPostProcessor 提供在Bean 创建之后的初始化之前BeforeInitialization 和初始化之后AfterInitialization。
+		 * 也就是在doCreateBean -中实例化Bean对象，populateBean方法之后会执行intializeBean，在这个方法中首先执行BeforeInitialization ，
+		 * 然后执行 init-method和InitializingBean接口的afterPropertiesSet。 然后执行AfterInitialization。
+		 *
+		 * Spring中提供了InstantiationAwareBeanPostProcessor 对BeanPostProcessor进行增强，他提供了在对象创建之前 和对象创建之后执行的方法
+		 * BeforeInstantiation 和AfterInstantiation
+		 *
+		 *
+		 * populatebean方法是在对象实例化之后被执行的， populateBean方法中的第一步就是执行InstantiationAwareBeanPostProcessor 的AfterInstantiation。
+		 * 然后根据beanDefinition中的属性填充bean。
+		 * 因此整个流程就是
+		 * InstantiationAwareBeanPostProcessor 的BeforeInstantiation，然后实例化Bean--->populateBean中
+		 *的InstantiationAwareBeanPostProcessor AfterInstantiation 然后populateBean执行完之后开
+		 * 始执行intializeBean，intializeBean中首先是BeanPostProcessor的BeforeInitialization 然后是init-method，
+		 * 最后执行BeanPostProcessor的AfterInitialization。
+		 *
+		 *
+		 */
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
@@ -1372,8 +1420,26 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		/**
+		 * 属性的注入是将BeanDefinition中的属性设置到bean对象中。
+		 *
+		 * 而不是说给Bean填充所有的属性，不再md中的属性 并不会被设置。
+		 *
+		 */
 		PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
 
+
+		/**
+		 * 从这段代码我们看到这里是对autowire属性的处理 我们思考@Autowired注解的处理不是由
+		 * AutowireAnnotationBeanPostProcessor处理的吗？
+		 * 怎么在这里会处理autowire。不应该是由AutowireAnnotationBeanPostProcessor处理吗？
+		 * 实际上Bean对象存在autowire属性，比如下面这个bean配置，bean的autowire属性类似于scope属性initMethod属性
+		 * <bean id="a" class="A" autowire="byName"></bean>
+		 *
+		 * 所以populateBean中的getResolveAutowireMode是对Bean的autowire属性的处理。 这个概念不同于Bean对象的成员
+		 * 变量上使用@Autowired注解标注。
+		 *
+		 */
 		int resolvedAutowireMode = mbd.getResolvedAutowireMode();
 		if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
 			MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
@@ -1399,6 +1465,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+					/**
+					 * CommonAnnotationBeanPostProcessor执行 对属性进行注入
+					 */
 					PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
 					if (pvsToUse == null) {
 						if (filteredPds == null) {
