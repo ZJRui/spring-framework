@@ -248,6 +248,12 @@ public class ContextLoader {
 
 
 	/**
+	 *
+	 * web.xml文件中 定义ContextLoaderListener，他会加载web-inf/下面的applicationContext.xml，
+	 * 这个容器作为整个web应用顶层的WebApplicationContext（Root WebApplicationContext ），主要用于提供应用使用的中间层服务于，
+	 * 比如数据源定义，数据访问对象dao，服务对象Service等。
+	 * 他的实现原理是 ContextLoaderListener继承自ServletContextListener，tomcat会调用ServletContextListener的contextInitialized方法
+	 * ，因此会执行ContextLoaderListener的contextInitialized方法，从而去加载ContextLoaderListener配置的 spring配置文件。
 	 * Initialize Spring's web application context for the given servlet context,
 	 * using the application context provided at construction time, or creating a new one
 	 * according to the "{@link #CONTEXT_CLASS_PARAM contextClass}" and
@@ -289,6 +295,9 @@ public class ContextLoader {
 						ApplicationContext parent = loadParentContext(servletContext);
 						cwac.setParent(parent);
 					}
+					/**
+					 * 加载web.xml文件中配置的ContextLoaderListener配置的contextConfigLocation属性
+					 */
 					configureAndRefreshWebApplicationContext(cwac, servletContext);
 				}
 			}
@@ -384,6 +393,9 @@ public class ContextLoader {
 		}
 
 		wac.setServletContext(sc);
+		/**
+		 * 获取web.xml文件中配置的ContextLoaderListener 的contextConfigLocation属性
+		 */
 		String configLocationParam = sc.getInitParameter(CONFIG_LOCATION_PARAM);
 		if (configLocationParam != null) {
 			wac.setConfigLocation(configLocationParam);

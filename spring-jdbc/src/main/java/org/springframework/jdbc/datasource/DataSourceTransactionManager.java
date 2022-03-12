@@ -244,6 +244,21 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 		return txObject;
 	}
 
+	/**
+	 *
+	 * 在DataSourceTransactionManager的实现中，我们发现，每次调用doGetTransaction方法都会返回 一个新的DataSourceTransactionObject对象
+	 *
+	 * 既然DataSourceTransactionObject对象作为事务对象，岂不是每次调用都会创建一个事务？
+	 * 实际上DataSourceTransactionObject对象不代表事务， 在创建DataSourceTransactionObject的时候  获取到了当前线程中的ConnectionHolder
+	 *
+	 * 在下面的 判断当前是否存在事务 isExistingTransaction 方法中就使用到了ConnectionHolder。
+	 * ConnectionHolder 内部有一个transactionActive属性，begin的时候 设置为true。
+	 *
+	 * 实际上  一个事务对象就是一个Connection，Spring使用ConnectionHolder来表示connection，holder中会另外存储一些状态信息。《Spring中如何判断事务是否存在》
+	 *
+	 *
+	 *
+	 */
 	@Override
 	protected boolean isExistingTransaction(Object transaction) {
 		DataSourceTransactionObject txObject = (DataSourceTransactionObject) transaction;
@@ -308,7 +323,14 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 	@Override
 	protected Object doSuspend(Object transaction) {
 		DataSourceTransactionObject txObject = (DataSourceTransactionObject) transaction;
+		//将事务对象中的connectionHolder清空了，
 		txObject.setConnectionHolder(null);
+		/**
+		 * 注意这个unBindResource返回值：
+		 *
+		 * 同时 从当前线程中移除 <datasource，connectionHolder>.
+		 * 但是unBindResource的返回值是ConnectionHolder。
+		 */
 		return TransactionSynchronizationManager.unbindResource(obtainDataSource());
 	}
 

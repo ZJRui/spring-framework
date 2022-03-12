@@ -889,11 +889,18 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				invocableMethod = invocableMethod.wrapConcurrentResult(result);
 			}
 
+			/**
+			 * 这里 对controller方法进行调用
+			 */
 			invocableMethod.invokeAndHandle(webRequest, mavContainer);
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				return null;
 			}
 
+			/**
+			 * 这会处理 RedirectAttributes
+			 *
+			 */
 			return getModelAndView(mavContainer, modelFactory, webRequest);
 		}
 		finally {
@@ -1007,6 +1014,9 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		if (!mavContainer.isViewReference()) {
 			mav.setView((View) mavContainer.getView());
 		}
+		/**
+		 * ，从一个请求到另一个请求，肯定是把参数放到了session中了
+		 */
 		if (model instanceof RedirectAttributes) {
 			Map<String, ?> flashAttributes = ((RedirectAttributes) model).getFlashAttributes();
 			HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);

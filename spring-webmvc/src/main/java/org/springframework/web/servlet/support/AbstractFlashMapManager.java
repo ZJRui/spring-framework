@@ -204,9 +204,18 @@ public abstract class AbstractFlashMapManager implements FlashMapManager {
 		Object mutex = getFlashMapsMutex(request);
 		if (mutex != null) {
 			synchronized (mutex) {
+				/**
+				 * 这里通过从HTTPSession中获取数据
+				 * HttpSession session = request.getSession(false);
+				 * 		return (session != null ? (List<FlashMap>) session.getAttribute(FLASH_MAPS_SESSION_ATTRIBUTE) : null);
+				 *
+				 */
 				List<FlashMap> allFlashMaps = retrieveFlashMaps(request);
 				allFlashMaps = (allFlashMaps != null ? allFlashMaps : new CopyOnWriteArrayList<>());
 				allFlashMaps.add(flashMap);
+				/**
+				 * 最后写入httpSession
+				 */
 				updateFlashMaps(allFlashMaps, request, response);
 			}
 		}

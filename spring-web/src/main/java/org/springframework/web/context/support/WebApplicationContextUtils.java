@@ -191,7 +191,23 @@ public abstract class WebApplicationContextUtils {
 			// Register as ServletContext attribute, for ContextCleanupListener to detect it.
 			sc.setAttribute(ServletContextScope.class.getName(), appScope);
 		}
-
+		/**
+		 *  在SpringMVC Controller中注入Request成员域
+		 * controller中 在它内部定义一个@Autowired HttpServletRequest request;可不可以? 能不能从这个对象里取requestParamters和attributes? 多线程之间会不会影响?
+		 * 实际上是可以拿到当前请求的对象的。
+		 * Controller对象的request属性注入的是一个 代理对象
+		 *
+		 * 原因是在我们对Controller的request属性 做注入的时候，首先会解析依赖，spring发现如果需要的类型是 ServletRequest，那么就会返回一个RequestObjectFactory对象，
+		 * 我们会创建一个HttpServletRequest接口的代理对象，注入到Controller中，创建代理对象的时候指定了InvocationHandler。 而且注意将RequestObjectFactory 交给了InvocationHandler。
+		 *
+		 *
+		 * 因此我们通过request 代理对象执行的时候会 被ObjectFactoryDelegatingInvocationHandler拦截，
+		 * InvocationHandler内部会通过ObjectFactory的getObject方法拿到真实的request对象。然后调用真实request对象的方法。那么 RequestObjectFactory为什么能够拿到当前的请求呢？
+		 * RequestObjectFactory会在当前线程ThreadLocal中拿到请求，而FrameworkServlet在doDispatch的时候会将请求放置到线程中。因此可以实现注入。
+		 * 容器启动的时候会通过 postProcessBeanFactory方法去定义下面的关系
+		 *
+		 *
+		 */
 		beanFactory.registerResolvableDependency(ServletRequest.class, new RequestObjectFactory());
 		beanFactory.registerResolvableDependency(ServletResponse.class, new ResponseObjectFactory());
 		beanFactory.registerResolvableDependency(HttpSession.class, new SessionObjectFactory());

@@ -81,6 +81,10 @@ public abstract class TransactionSynchronizationManager {
 	private static final ThreadLocal<Map<Object, Object>> resources =
 			new NamedThreadLocal<>("Transactional resources");
 
+	/**
+	 * TransactionSynchronization  表示事务同步器对象，就是说事务提交的时候执行 事务同步对象的同样的commit方法
+	 *
+	 */
 	private static final ThreadLocal<Set<TransactionSynchronization>> synchronizations =
 			new NamedThreadLocal<>("Transaction synchronizations");
 
@@ -93,6 +97,12 @@ public abstract class TransactionSynchronizationManager {
 	private static final ThreadLocal<Integer> currentTransactionIsolationLevel =
 			new NamedThreadLocal<>("Current transaction isolation level");
 
+	/**
+	 * 保存事务的状态
+	 *  比如： 我们挂起当前事务的时候 在 org.springframework.transaction.support.AbstractPlatformTransactionManager#suspend(java.lang.Object)
+	 *  方法中 就会将 actualTransactionActive设置为false
+	 *
+	 */
 	private static final ThreadLocal<Boolean> actualTransactionActive =
 			new NamedThreadLocal<>("Actual transaction active");
 
@@ -207,6 +217,7 @@ public abstract class TransactionSynchronizationManager {
 	 */
 	public static Object unbindResource(Object key) throws IllegalStateException {
 		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
+		// 返回值是connectionHolder，也就是返回了connection
 		Object value = doUnbindResource(actualKey);
 		if (value == null) {
 			throw new IllegalStateException(
@@ -434,10 +445,14 @@ public abstract class TransactionSynchronizationManager {
 	}
 
 	/**
+	 * 公开当前是否有实际的交易活动。 由事务管理器在事务开始和清理时调用。
+	 *
 	 * Expose whether there currently is an actual transaction active.
 	 * Called by the transaction manager on transaction begin and on cleanup.
 	 * @param active {@code true} to mark the current thread as being associated
 	 * with an actual transaction; {@code false} to reset that marker
+	 *
+	 *
 	 */
 	public static void setActualTransactionActive(boolean active) {
 		actualTransactionActive.set(active ? Boolean.TRUE : null);

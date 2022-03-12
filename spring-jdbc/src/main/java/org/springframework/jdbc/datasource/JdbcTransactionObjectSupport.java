@@ -45,6 +45,11 @@ import org.springframework.util.Assert;
  * @author Juergen Hoeller
  * @since 1.1
  * @see DataSourceTransactionManager
+ *
+ *
+ * 支持 JDBC 的事务对象的方便基类。 可以包含一个带有 JDBC 连接的 ConnectionHolder，并基于该 ConnectionHolder 实现 SavepointManager 接口。
+ * 允许对 JDBC 保存点进行编程管理。 Spring 的 org.springframework.transaction.support.DefaultTransactionStatus 自动委托给它，
+ * 因为它自动检测实现 SavepointManager 接口的事务对象。
  */
 public abstract class JdbcTransactionObjectSupport implements SavepointManager, SmartTransactionObject {
 

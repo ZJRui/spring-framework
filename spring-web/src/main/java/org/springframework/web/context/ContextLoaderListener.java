@@ -97,9 +97,20 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 
 	/**
 	 * Initialize the root web application context.
+	 *
+	 * web.xml文件中 定义ContextLoaderListener，他会加载web-inf/下面的applicationContext.xml，
+	 * 这个容器作为整个web应用顶层的WebApplicationContext（Root WebApplicationContext ），主要用于提供应用使用的中间层服务于，比如数据源定义，数据访问对象dao，服务对象Service等。
+	 * 他的实现原理是 ContextLoaderListener继承自ServletContextListener，tomcat会调用ServletContextListener的contextInitialized方法，
+	 * 因此会执行ContextLoaderListener的contextInitialized方法，从而去加载ContextLoaderListener配置的 spring配置文件。
+	 *
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
+		/**
+		 * 这个contextInitialized方法就是ServletContextListener接口的方法
+		 *
+		 * ServletContext启动之后会调用ServletContextListener的contextInitialized方法。
+		 */
 		initWebApplicationContext(event.getServletContext());
 	}
 

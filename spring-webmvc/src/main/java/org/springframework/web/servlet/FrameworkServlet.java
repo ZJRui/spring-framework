@@ -575,6 +575,9 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 						// the root application context (if any; may be null) as the parent
 						cwac.setParent(rootContext);
 					}
+					/**
+					 * DispatcherServlet也可以配置一个ContextConfigLocating属性 指定servlet的spring配置文件，这个地方就是refresh 加载这个配置文件 到cwac中。
+					 */
 					configureAndRefreshWebApplicationContext(cwac);
 				}
 			}
@@ -661,6 +664,9 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 
 		wac.setEnvironment(getEnvironment());
 		wac.setParent(parent);
+		/**
+		 * 读取 给DispatcherServlet 配置的ContextConfigLocation属性
+		 */
 		String configLocation = getContextConfigLocation();
 		if (configLocation != null) {
 			wac.setConfigLocation(configLocation);

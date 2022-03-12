@@ -50,9 +50,15 @@ public class ConnectionHolder extends ResourceHolderSupport {
 	@Nullable
 	private ConnectionHandle connectionHandle;
 
+	/**
+	 * jdbc.sql
+	 */
 	@Nullable
 	private Connection currentConnection;
 
+	/**
+	 * 标记事务是否开启。begin的时候 调用这个方法设置为true， doCleanUpAfterCompletion方法中调用当前类的clear方法设置为false
+	 */
 	private boolean transactionActive = false;
 
 	@Nullable
@@ -114,6 +120,8 @@ public class ConnectionHolder extends ResourceHolderSupport {
 	/**
 	 * Set whether this holder represents an active, JDBC-managed transaction.
 	 * @see DataSourceTransactionManager
+	 *
+	 * begin的时候 调用这个方法设置为true， doCleanUpAfterCompletion方法中调用当前类的clear方法设置为false
 	 */
 	protected void setTransactionActive(boolean transactionActive) {
 		this.transactionActive = transactionActive;

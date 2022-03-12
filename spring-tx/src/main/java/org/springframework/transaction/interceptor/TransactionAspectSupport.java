@@ -473,6 +473,25 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		TransactionStatus status = null;
 		if (txAttr != null) {
 			if (tm != null) {
+
+				/**
+				 * 注意 假设当前线程中已经存在事务，则意味着在当前线程的ThreadLocal中存在 一个键值对<dataSource,Connection>
+				 *     如果当前事务的传播行为是 挂起原来的事务 开启新的事务， 那么在handleExistingTransaction方法
+				 *     中的处理逻辑就是 1, 清除当前线程中的事务对象ConnectionHolder 2，将上一步的事务对象 封装到suspendResourceHolder
+				 *     3，将suspendResourceHolder 构建为一个DefaultTransactionStatus对象  4，开启新的事务 也就是创建新的ConnectionHolder放置到当前线程中作为新的事务
+				 *     4，  DefaultTransactionStatus对象 会被作为 handleExistingiTransaction方法的返回值。
+				 *
+				 *    handleExistingiTransaction方法的返回值又会被作为getTransaction的返回值。 因此
+				 *     这里的getTransaction方法实际上返回的是被挂起的事务
+				 *
+				 *     因此，这个时候我们关注 spring是 如何组织处理被挂起的事务的？ 程序回溯到createTransactionIfNecessary方法中。
+				 *     在这个方法中 会通过 prepareTransactionInfo方法进行处理
+				 *
+				 *     ------------------
+				 *     如果当前线程中没有开启过事务，那么在getTransaction方法中就会创建一个空的SuspendResourceHolder，
+				 *     然后将这个挂起事务放置到TransactionStatus对象中，最终作为getTransaction的返回值
+				 */
+
 				status = tm.getTransaction(txAttr);
 			}
 			else {
@@ -482,6 +501,17 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 				}
 			}
 		}
+		/**
+		 * 注意 假设当前线程中已经存在事务，则意味着在当前线程的ThreadLocal中存在 一个键值对<dataSource,Connection>
+		 *     如果当前事务的传播行为是 挂起原来的事务 开启新的事务， 那么在handleExistingTransaction方法
+		 *     中的处理逻辑就是 1, 清除当前线程中的事务对象ConnectionHolder 2，将上一步的事务对象 封装到suspendResourceHolder
+		 *     3，将suspendResourceHolder 构建为一个DefaultTransactionStatus对象  4，开启新的事务 也就是创建新的ConnectionHolder放置到当前线程中作为新的事务
+		 *     4，  DefaultTransactionStatus对象 会被作为 handleExistingiTransaction方法的返回值。
+		 *
+		 *     因此，这个时候我们关注 spring是 如何组织处理被挂起的事务的？ 程序回溯到createTransactionIfNecessary方法中。
+		 *     在这个方法中 会通过 prepareTransactionInfo方法进行处理
+		 */
+
 		return prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
 	}
 
@@ -504,6 +534,12 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 				logger.trace("Getting transaction for [" + txInfo.getJoinpointIdentification() + "]");
 			}
 			// The transaction manager will flag an error if an incompatible tx already exists.
+			/**
+			 * 如果不兼容的 tx 已经存在，事务管理器将标记错误。
+			 *
+			 * 将TransactionStatus对象放置到TransactionInfo中， 这个TransactionStatus对象中 会包含已挂起的事务资源SuspendResourceHolder
+			 *
+			 */
 			txInfo.newTransactionStatus(status);
 		}
 		else {
@@ -518,6 +554,12 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		// We always bind the TransactionInfo to the thread, even if we didn't create
 		// a new transaction here. This guarantees that the TransactionInfo stack
 		// will be managed correctly even if no transaction was created by this aspect.
+		/**
+		 * // 我们总是将 TransactionInfo 绑定到线程，即使我们没有创建
+		 * // 这里有一个新事务。 这保证了 TransactionInfo 堆栈
+		 * // 即使这方面没有创建事务，也会被正确管理。
+		 *
+		 */
 		txInfo.bindToThread();
 		return txInfo;
 	}
@@ -659,6 +701,30 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		private void bindToThread() {
 			// Expose current TransactionStatus, preserving any existing TransactionStatus
 			// for restoration after this transaction is complete.
+			/**
+			 * // 公开当前的 TransactionStatus，保留任何现有的 TransactionStatus
+			 * // 用于在此事务完成后恢复。
+			 *
+			 * 也就是说：如果当前开启新的事务，那么 就需要先挂起之前的事务， 挂起的事务资源使用SuspendResourceHolder表示，
+			 * 他被封装到TransactionStatus对象中。 TransactionStatus对象又被设置到TransactionInfo对象中。
+			 *
+			 * 这里的this 就是 TransactionInfo，因为在 TransactionAspectSupport#prepareTransactionInfo(org.springframework.transaction.PlatformTransactionManager, org.springframework.transaction.interceptor.TransactionAttribute, java.lang.String, org.springframework.transaction.TransactionStatus)
+			 * 中会执行 trxinfo.bindToThread()
+			 *
+			 * 在这个方法中我们看到 首先将 保留之前的事务状态信息，然后将现在的事务状态信息放置到ThreadLocal中
+			 *
+			 * ------------------------------
+			 * 首先我们注意到TransactionInfo对象中 有一个 oldTransactionInfo 属性；
+			 *  有一个ThreadLocal transactionInfoHolder用来保存当前的transactionInfo。
+			 *
+			 *  首先我们可以通过ThreadLocal拿到当前的transactionInfo，然后开启事务的时候会 创建 一个新的TransactionStatus ，
+			 *  TransactionStatus又被封装到了新的TransactionInfo中。
+			 *  此时我们将这个新的TransactionInfo绑定到线程中，同时将线程中原来的TransactionInfo作为当前TransactionInfo对象的oldTransactionInfo
+			 *
+			 *  因此通过ThreadLocal拿到当前的TransactionInfo，然后通过其oldTransactionInfo属性拿到之前的TransactionInfo，这就是一个链表结构。
+			 *
+			 *
+			 */
 			this.oldTransactionInfo = transactionInfoHolder.get();
 			transactionInfoHolder.set(this);
 		}
