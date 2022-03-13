@@ -244,10 +244,14 @@ public abstract class AopUtils {
 		}
 
 		Set<Class<?>> classes = new LinkedHashSet<>();
+		/**
+		 * 判断targetClass是否是 代理类。
+		 * 一般情况下 targetClass是 HelloServiceImpl，因此会进入if
+		 */
 		if (!Proxy.isProxyClass(targetClass)) {
 			classes.add(ClassUtils.getUserClass(targetClass));
 		}
-		//获取目标类的所有接口，然后针对接口方法进行判断 Poincut是否匹配到 方法
+		//获取目标类的所有接口，然后针对接口方法进行判断 Poincut是否匹配到 方法。 因此最终classes 里面包含了 HelloServiceImpl和HelloService
 		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 
 		for (Class<?> clazz : classes) {

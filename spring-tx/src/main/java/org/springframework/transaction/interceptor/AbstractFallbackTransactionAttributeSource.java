@@ -131,6 +131,16 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 		}
 		else {
 			// We need to work it out.
+			/**
+			 * 我们要注意这里的 Method 是什么，targetClass是什么
+			 *
+			 * targetClass是 AbstractAutoProxyCreator#wrapIfNecessary(java.lang.Object, java.lang.String, java.lang.Object) 对当前的bean对象
+			 * 调用了getClass得到的class。 因此对于 jdk动态代理而言就是接口实现类。 对于cglib而言就是 增强后的cglib子类。
+			 *
+			 * Method是 AopUtils的canApply方法中 获取beanClass上的所有接口，针对每一个接口 取出其中的每一个方法 来尝试获取接口上的事务属性。
+			 * 因此method就是接口上的方法。
+			 *
+			 */
 			org.springframework.transaction.interceptor.TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
 			// Put it in the cache.
 			if (txAttr == null) {
@@ -178,22 +188,59 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 
 		// The method may be on an interface, but we need attributes from the target class.
 		// If the target class is null, the method will be unchanged.
+		/**
+		 * // 方法可能在接口上，但我们需要目标类的属性。
+		 * // 如果目标类为空，方法不变。
+		 *
+		 *  * 我们要注意这里的 Method 是什么，targetClass是什么
+		 * 			 *
+		 * 			 * targetClass是 AbstractAutoProxyCreator#wrapIfNecessary(java.lang.Object, java.lang.String, java.lang.Object) 对当前的bean对象
+		 * 			 * 调用了getClass得到的class。 因此对于 jdk动态代理而言就是接口实现类。 对于cglib而言就是 增强后的cglib子类。
+		 * 			 *
+		 * 			 * Method是 AopUtils的canApply方法中 获取beanClass上的所有接口，针对每一个接口 取出其中的每一个方法 来尝试获取接口上的事务属性。
+		 * 			 * 因此method就是接口上的方法。
+		 *
+		 * 接口上的方法是abstract的。 而接口实现类的method没有abstract。
+		 *
+		 * 因此specificMethod就是获取到了实现类上的方法
+		 *
+		 *
+		 */
 		Method specificMethod = AopUtils.getMostSpecificMethod(method, targetClass);
 
 		// First try is the method in the target class.
+		/**
+		 * 首先从实现类的方法上获取事务属性。
+		 * 如果是jdk代理，这个实现类的方法 就是接口的实现类方法； 如果是cglib代理，这个实现类就是cglib代理对象的方法。
+		 *
+		 * 如果我们使用的是jdk代理，而且直接在实现类的方法上使用@Transactional注解，这个时候 我们从specificMethod中中就能获取到 事务信息。
+		 * 如果是jdk代理，但是@Transactional被注解在接口上，这个时候就获取不到。
+		 */
 		org.springframework.transaction.interceptor.TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
 		if (txAttr != null) {
 			return txAttr;
 		}
 
 		// Second try is the transaction attribute on the target class.
+		/**
+		 * 在这个 实现类上获取注解。
+		 * 如果是jdk代理， 这个实现类就是接口的实现类对象。
+		 * 如果是cglib代理这个实现类就是cglib增强后的子对象。
+		 */
 		txAttr = findTransactionAttribute(specificMethod.getDeclaringClass());
 		if (txAttr != null && ClassUtils.isUserLevelMethod(method)) {
 			return txAttr;
 		}
 
+		/**
+		 * 如果 方法不相等。 因为这里的method 其实是接口中定义的方法，abstract类型的。
+		 * specificMethod是  targetClass（beanClass）中的方法。因此一般是不相等的
+		 */
 		if (specificMethod != method) {
 			// Fallback is to look at the original method.
+			/**
+			 * 这个时候就会从 method（接口方法 ） 上去找注解属性。 如果找不到再从接口类上找事务属性。
+			 */
 			txAttr = findTransactionAttribute(method);
 			if (txAttr != null) {
 				return txAttr;

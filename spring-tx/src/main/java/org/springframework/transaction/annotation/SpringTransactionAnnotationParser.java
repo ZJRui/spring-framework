@@ -42,6 +42,63 @@ public class SpringTransactionAnnotationParser implements TransactionAnnotationP
 	@Override
 	@Nullable
 	public TransactionAttribute parseTransactionAnnotation(AnnotatedElement element) {
+		/**
+		 * element 就是class
+		 *
+		 * findMergedAnnotationAttributes:565, AnnotatedElementUtils (org.springframework.core.annotation)
+		 * //下面的就是 当前的方法 parseTransactionAnnotation
+		 * parseTransactionAnnotation:50, SpringTransactionAnnotationParser (org.springframework.transaction.annotation)
+		 * determineTransactionAttribute:175, AnnotationTransactionAttributeSource (org.springframework.transaction.annotation)
+		 * findTransactionAttribute:153, AnnotationTransactionAttributeSource (org.springframework.transaction.annotation)
+		 * computeTransactionAttribute:168, AbstractFallbackTransactionAttributeSource (org.springframework.transaction.interceptor)
+		 * getTransactionAttribute:112, AbstractFallbackTransactionAttributeSource (org.springframework.transaction.interceptor)
+		 * matches:47, TransactionAttributeSourcePointcut (org.springframework.transaction.interceptor)
+		 * canApply:252, AopUtils (org.springframework.aop.support)
+		 * canApply:289, AopUtils (org.springframework.aop.support)
+		 * findAdvisorsThatCanApply:321, AopUtils (org.springframework.aop.support)
+		 * findAdvisorsThatCanApply:128, AbstractAdvisorAutoProxyCreator (org.springframework.aop.framework.autoproxy)
+		 * findEligibleAdvisors:97, AbstractAdvisorAutoProxyCreator (org.springframework.aop.framework.autoproxy)
+		 * getAdvicesAndAdvisorsForBean:78, AbstractAdvisorAutoProxyCreator (org.springframework.aop.framework.autoproxy)
+		 * wrapIfNecessary:347, AbstractAutoProxyCreator (org.springframework.aop.framework.autoproxy)
+		 * postProcessAfterInitialization:299, AbstractAutoProxyCreator (org.springframework.aop.framework.autoproxy)
+		 * applyBeanPostProcessorsAfterInitialization:430, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * initializeBean:1798, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * doCreateBean:594, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * createBean:516, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * lambda$doGetBean$0:324, AbstractBeanFactory (org.springframework.beans.factory.support)
+		 * getObject:-1, 27131477 (org.springframework.beans.factory.support.AbstractBeanFactory$$Lambda$168)
+		 * getSingleton:234, DefaultSingletonBeanRegistry (org.springframework.beans.factory.support)
+		 * doGetBean:322, AbstractBeanFactory (org.springframework.beans.factory.support)
+		 * getBean:202, AbstractBeanFactory (org.springframework.beans.factory.support)
+		 * resolveCandidate:276, DependencyDescriptor (org.springframework.beans.factory.config)
+		 * doResolveDependency:1307, DefaultListableBeanFactory (org.springframework.beans.factory.support)
+		 * resolveDependency:1227, DefaultListableBeanFactory (org.springframework.beans.factory.support)
+		 * inject:640, AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement (org.springframework.beans.factory.annotation)
+		 * inject:130, InjectionMetadata (org.springframework.beans.factory.annotation)
+		 * postProcessProperties:399, AutowiredAnnotationBeanPostProcessor (org.springframework.beans.factory.annotation)
+		 * populateBean:1420, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * doCreateBean:593, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * createBean:516, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * lambda$doGetBean$0:324, AbstractBeanFactory (org.springframework.beans.factory.support)
+		 * getObject:-1, 27131477 (org.springframework.beans.factory.support.AbstractBeanFactory$$Lambda$168)
+		 * getSingleton:234, DefaultSingletonBeanRegistry (org.springframework.beans.factory.support)
+		 * doGetBean:322, AbstractBeanFactory (org.springframework.beans.factory.support)
+		 * getBean:202, AbstractBeanFactory (org.springframework.beans.factory.support)
+		 * preInstantiateSingletons:897, DefaultListableBeanFactory (org.springframework.beans.factory.support)
+		 * finishBeanFactoryInitialization:879, AbstractApplicationContext (org.springframework.context.support)
+		 * __refresh:551, AbstractApplicationContext (org.springframework.context.support)
+		 * jrLockAndRefresh:40002, AbstractApplicationContext (org.springframework.context.support)
+		 * refresh:41008, AbstractApplicationContext (org.springframework.context.support)
+		 * refresh:143, ServletWebServerApplicationContext (org.springframework.boot.web.servlet.context)
+		 * refresh:758, SpringApplication (org.springframework.boot)
+		 * refresh:750, SpringApplication (org.springframework.boot)
+		 * refreshContext:397, SpringApplication (org.springframework.boot)
+		 * run:315, SpringApplication (org.springframework.boot)
+		 * run:1237, SpringApplication (org.springframework.boot)
+		 * run:1226, SpringApplication (org.springframework.boot)
+		 * main:12, DemoApplication (com.example.demo)
+		 *
+		 */
 		AnnotationAttributes attributes = AnnotatedElementUtils.findMergedAnnotationAttributes(
 				element, Transactional.class, false, false);
 		if (attributes != null) {
