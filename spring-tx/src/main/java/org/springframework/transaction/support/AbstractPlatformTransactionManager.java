@@ -360,6 +360,41 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 		 *
 		 *
 		 */
+
+		/***
+		 *
+		 *  问题1： 我们知道开启一个新事务 之前的事务会挂起，当前事务执行之后，原来的事务需要回复，这个事务之间的关系是如何构成的
+		 * 			 *
+		 * 			 * 在getTransaction的时候，首先通过 doGetTransaction方法 来创建一个事务对象DataSourceTransactionObject，注意doGetTransaction只是创建事务对象
+		 * 			 * ，并没有开启事务，事务的开启是在doBegin方法中。
+		 * 			 * org.springframework.jdbc.datasource.DataSourceTransactionManager#doGetTransaction 这个方法中会创建一个新的DataSourceTransactionObject 对象，
+		 * 			 * 然后将当前线程中的 ConnectionHolder放置到这个新的事务对象中，
+		 * 			 *
+		 * 			 * 然后在getTransaction方法中通过doGetTransaction方法获得了新的事务对象，我们根据这个新的事务对象来判断之前是否存在事务， 判断的依据就是判断这个DataSourceTransactionObject对象中
+		 * 			 * 是否存在ConnectionHolder，因为如果之前存在事务的话线程中就一定会有ConnectionHolder，那么我们创建事务对象DataSourceTransactionObject 会将这个ConnectionHolder交给新的DataSourceTransactionObject对象
+		 * 			 *
+		 * 			 * 因此我们需要根据DataSourceTransactionObject 判断之前已经开启了事务，如果已经开了则考虑是否挂起事务 ，如果判断需要挂起，
+		 * 			 * 我们会将新的DataSourceTransactionObject 对象中的 ConnectionHolder设置为null（这个在 org.springframework.jdbc.datasource.DataSourceTransactionManager#doSuspend中实现），同时清除线程中的connection
+		 * 			 * 将线程中保存的旧的事务封装成SuspendedResourcesHolder 对象。
+		 * 			 * 然后调用newTransactionStatus方法为 DataSourceTransactionObject对象 创建新的ConnectionHolder。  newTransactionStatus方法返回的
+		 * 			 * DefaultTransactionStatus对象中既持有doGetTransaction方法返回的新 DataSourceTransactionObject，又通过SuspendedResourcesHolder 持有原来的事务的ConnectionHolder
+		 *
+		 *
+		 *
+		 * 问题2： 下面首先调用了 doGetTransaction方法， 在DataSourceTransactionManager的doGetTransaction方法实现中，每次调用doGetTransaction都会new 一个 DataSourceTransactionObject 作为返回值，
+		 * 那么是不是意味着每次调用doGetTransaction都开启了一个新的事务呢？
+		 * 答案是不是的： 在doGetTransaction方法的实现中，我们虽然 会创建一个新的 DataSourceTransactionObject 对象，但是事务的实际开启是在dobegin方法中。
+		 * 而且，在doGetTransaction方法中，我们创建了DataSourceTransactionObject 对象，DataSourceTransactionObject 的本质是通过ConnectionHolder持有connection
+		 * 在创建DataSourceTransactionObject 的时候我们会查询线程中的 ConnectionHoilder，如果当前线程存在ConnectionHolder，则表示存在事务，这个时候我们会将当前线程的ConnectionHolder设置到新的 DataSourceTransactionObject对象
+		 * 中， 然后 在doGetTransaction之后 我们会根据这个新的 DataSourceTransactionObject 对象 调用isExistingTransaction 方法来判断当前线程是否已经存在 事务。
+		 *
+		 * isExistingTransaction判断的原理 也很简单就是检查新的DataSourceTransactionObject对象中ConnectionHolder是否存在connection
+		 *
+		 *
+		 *
+		 *
+		 *
+		 */
 		Object transaction = doGetTransaction();
 
 		// Cache debug flag to avoid repeated checks.
@@ -403,6 +438,7 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 				logger.debug("Creating new transaction with name [" + definition.getName() + "]: " + definition);
 			}
 			try {
+
 				boolean newSynchronization = (getTransactionSynchronization() != SYNCHRONIZATION_NEVER);
 				DefaultTransactionStatus status = newTransactionStatus(
 						definition, transaction, true, newSynchronization, debugEnabled, suspendedResources);
@@ -422,6 +458,21 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 						"isolation level will effectively be ignored: " + definition);
 			}
 			boolean newSynchronization = (getTransactionSynchronization() == SYNCHRONIZATION_ALWAYS);
+			/**
+			 * 注意这个prepareTransactionStatus方法中调用了 prepareSynchronization方法
+			 *
+			 * 注意这里 的第二个参数是null，这会导致 创建的TransactionStatus对象的transaction属性为null，我们可以根据这个属性来判断当前是否存在事务
+			 *
+			 *
+			 问题：为什么可以依据TransactionStatus中的transaction来 判断是否存在事务呢？
+			 * 	 * 因为我们之前分析过 在Spring的getTransaction方法中，第一步就是调用了doGetTransaction方法 来创建一个DataSourceTransactionObject作为事务对象
+			 * 	 * 然后这个事务对象DataSourceTransactionObject又会根据当前事务的级别：是否需要事务，是否需要创建新的事务 ，
+			 * 	 * 最终这个事务对象被交给了DefaultTransactionStatus对象中。但是我们注意到如果事务级别是不需要事务，
+			 * 	 * 这个时候我们创建了一个DefaultTransactionStatus对象，但是传递的transaction是null，表示他是一个空事务；
+			 * 	 * 当事务的级别是需要事务的时候我们会将doGetTransaction返回的事务对象交给DefaultTransactionStatus对象，
+			 * 	 * 因此在TransactionStatus中 可以通过TransactionStatus的transaction属性是否为空来判断当前是否存在事务
+			 *
+			 */
 			return prepareTransactionStatus(definition, null, true, newSynchronization, debugEnabled, null);
 		}
 	}
@@ -586,6 +637,80 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	 * Initialize transaction synchronization as appropriate.
 	 */
 	protected void prepareSynchronization(DefaultTransactionStatus status, TransactionDefinition definition) {
+		/**
+		 * prepareSynchronization 方法中做了两个重要事情
+		 * （1）设置TransactionSynchronizationManager 中的actualTransactionActive 属性，标记 当前（注意是当前正在进行中）是否存在事务，不是当前线程中是否存在事务，因为之前的事务可能挂起，然后执行了一个不需要事务的操作，
+		 * 此时当前就是没有事务
+		 *
+		 * （2） 执行 TransactionSynchronizationManager.initSynchronization() ，
+		 *
+		 * 在TransactionSynchronizationManager中有两个重要的方法会
+		 * isSynchronizationActive 和 isActualTransactionActive ，前者判断是否开始事务同步， 后者判断当前线程中正在进行中的是否存在事务。
+		 *
+		 * 这两者是有区别的，具体参考isActualTransactionActive 方法的注释。 有的时候我们只开启了事务同步，但是当前线程中并不实际存在事务。
+		 *
+		 *
+		 * 问题： 在下面的 setActualTransactionActive方法中，我们通过status.hasTransaction() 来判断是否存在事务，这个原理是什么，为什么DefaultTransactionStatus中会存在事务？
+		 * 这是因为TransactionManager在 通过getTransaction 方法得到事务之后 ，在startTransaction方法中
+		 * 和prepareTransactionStatus 方法中会 调用TransactionManager的newTransactionStatus 方法来创建TransactionStatus对象， 也就是如下：
+		 *  new org.springframework.transaction.support.DefaultTransactionStatus(
+		 * 				transaction, newTransaction, actualNewSynchronization,
+		 * 				definition.isReadOnly(), debug, suspendedResources);
+		 *        }
+		 *
+		 *  在创建DefaultTransactionStatus对象的时候讲事务对象transaction交给了TransactionStatus对象。
+		 *
+		 * AbstractPlatformTransactionManager.newTransactionStatus(TransactionDefinition, Object, boolean, boolean, boolean, Object)  (org.springframework.transaction.support)
+		 *     AbstractPlatformTransactionManager.prepareTransactionStatus(TransactionDefinition, Object, boolean, boolean, boolean, Object)  (org.springframework.transaction.support)
+		 *         AbstractPlatformTransactionManager.handleExistingTransaction(TransactionDefinition, Object, boolean)(3 usages)  (org.springframework.transaction.support)
+		 *         AbstractPlatformTransactionManager.getTransaction(TransactionDefinition)  (org.springframework.transaction.support)
+		 *     AbstractPlatformTransactionManager.startTransaction(TransactionDefinition, Object, boolean, SuspendedResourcesHolder)  (org.springframework.transaction.support)
+		 *         AbstractPlatformTransactionManager.getTransaction(TransactionDefinition)  (org.springframework.transaction.support)
+		 *
+		 *
+		 * 问题2：Mysql中TransactionManager getTransaction返回的事务对象是什么对象？ DataSourceTransactionManager 返回DataSourceTransactionObject
+		 * 在DataSourceTransactionManager的实现中 直接new了一个 DataSourceTransactionObject作为事务对象， 他没有考虑当前线程是否已经存在数据库事务。
+		 * 因此也就是 同一个数据库事务 可以有多个Spring中的事务对象（DataSourceTransactionObject），也就是说
+		 * 不同的DataSourceTransactionObject对象可能会表示相同的数据库事务对象。Spring中的事务对象和数据库中开启的事务不是等价的。
+		 *
+		 *
+		 * 问题3：DataSourceTransactoinManager 的getTransaction方法返回了事务对象DataSourceTransactionObject， 但是这个事务对象是怎么使用的呢？
+		 * 实际上这个事务对象 DataSourceTransactionObject内有一个ConnectionHolder 属性，他用来持有连接connection。
+		 * 在TransactionManager的doBegin的时候，在DataSourceTransactionManager的doBegin方法实现中会真正获取connection，然后将connection设置到 事务对象DataSourceTransactionObject中
+		 * ，因此我们说是spring中的事务本质上是 持有了一个connection
+		 * 也就是说doBegin方法确确实实会在底层数据库中开启一个事务。
+		 * 我们知道在MySQL中 开启数据库事务都是使用
+		 * BEGIN 开始一个事务
+		 * ROLLBACK 事务回滚
+		 * COMMIT 事务确认
+		 * 那么在doBegin中是否 有具体的sql语句呢？ 事实上JDBC编程式事务 中 我们是获取了Connection，
+		 * 设置autoCommit为false，最终commit，并没有看到具体 执行 数据库的 begin语句的代码。在PlatformTransactionManager的具体实现类比如DataSourceTransactionManager的doBegin方法中我们看到获取connection、设置autoCommit属性、设置是否为只读属性，没有看到 执行数据库的begin语句开启事务
+		 *
+		 *
+		 * 问题4： 我们知道开启一个新事务 之前的事务会挂起，当前事务执行之后，原来的事务需要回复，这个事务之间的关系是如何构成的
+		 *
+		 * 在getTransaction的时候，首先通过 doGetTransaction方法 来创建一个事务对象DataSourceTransactionObject，注意doGetTransaction只是创建事务对象
+		 * ，并没有开启事务，事务的开启是在doBegin方法中。
+		 * org.springframework.jdbc.datasource.DataSourceTransactionManager#doGetTransaction 这个方法中会创建一个新的DataSourceTransactionObject 对象，
+		 * 然后将当前线程中的 ConnectionHolder放置到这个新的事务对象中，
+		 *
+		 * 然后在getTransaction方法中通过doGetTransaction方法获得了新的事务对象，我们根据这个新的事务对象来判断之前是否存在事务， 判断的依据就是判断这个DataSourceTransactionObject对象中
+		 * 是否存在ConnectionHolder，因为如果之前存在事务的话线程中就一定会有ConnectionHolder，那么我们创建事务对象DataSourceTransactionObject 会将这个ConnectionHolder交给新的DataSourceTransactionObject对象
+		 *
+		 * 因此我们需要根据DataSourceTransactionObject 判断之前已经开启了事务，如果已经开了则考虑是否挂起事务 ，如果判断需要挂起，
+		 * 我们会将新的DataSourceTransactionObject 对象中的 ConnectionHolder设置为null（这个在 org.springframework.jdbc.datasource.DataSourceTransactionManager#doSuspend中实现），同时清除线程中的connection
+		 * 将线程中保存的旧的事务封装成SuspendedResourcesHolder 对象。
+		 * 然后调用newTransactionStatus方法为 DataSourceTransactionObject对象 创建新的ConnectionHolder。  newTransactionStatus方法返回的
+		 * DefaultTransactionStatus对象中既持有doGetTransaction方法返回的新 DataSourceTransactionObject，又通过SuspendedResourcesHolder 持有原来的事务的ConnectionHolder
+		 *
+		 *
+		 * 具体参考《Spring事务的实现原理分析》
+		 *
+		 *
+		 *
+		 *
+		 *
+		 */
 		if (status.isNewSynchronization()) {
 			TransactionSynchronizationManager.setActualTransactionActive(status.hasTransaction());
 			TransactionSynchronizationManager.setCurrentTransactionIsolationLevel(

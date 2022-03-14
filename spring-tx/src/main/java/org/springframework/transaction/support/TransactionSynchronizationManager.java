@@ -270,6 +270,7 @@ public abstract class TransactionSynchronizationManager {
 	/**
 	 * Return if transaction synchronization is active for the current thread.
 	 * Can be called before register to avoid unnecessary instance creation.
+	 * 	 * isSynchronizationActive这个方法不是用来判断当前线程中是否存在事务的，具体参考脑 当前类中的isActualTransactionActive方法
 	 * @see #registerSynchronization
 	 */
 	public static boolean isSynchronizationActive() {
@@ -468,6 +469,62 @@ public abstract class TransactionSynchronizationManager {
 	 * transaction being active (with backing resource transaction;
 	 * on PROPAGATION_REQUIRED, PROPAGATION_REQUIRES_NEW, etc).
 	 * @see #isSynchronizationActive()
+	 * 	 *
+	 * 	 * *返回当前是否有一个实际的活动事务。
+	 * 	 * 这表示当前线程是否与实际的线程相关联
+	 * 	 * *事务而不是只与活动事务同步。
+	 * 	 * * <p>被想要区别对待的资源管理代码调用
+	 * 	 * *在活动事务同步之间(有或没有支持)
+	 * 	 * *资源事务;也在PROPAGATION_SUPPORTS上)和实际的
+	 * 	 * *事务是活动的(支持资源事务;
+	 * 	 * * on PROPAGATION_REQUIRED, PROPAGATION_REQUIRES_NEW，等等)。
+	 * 	 *
+	 * 	 *  两个概念
+	 * 	 * 	 * （1） just with active transaction synchronization.
+	 * 	 * 	 * （2）there currently is an actual transaction active.
+	 * 	 * 	 *
+	 * 	 * 	 * 该方法的实现原理是 Manager 的 ThreadLocal<Boolean> actualTransactionActive 中是否有值
+	 * 	 *
+	 * 	 * 	 在 AbstractPlatformTransactionManager的getTransaction方法中会调用 TransactionManager的
+	 * 	 * 	 	prepareSynchronization(status, definition);
+	 * 	 * 	 prepare方法的实现如下	： 会调用setActualTransactionActive方法 标记位事务开启
+	 * 	 * 	 	    TransactionSynchronizationManager.setActualTransactionActive(status.hasTransaction());
+	 * 	 * 			TransactionSynchronizationManager.setCurrentTransactionIsolationLevel(
+	 * 	 * 					definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT ?
+	 * 	 * 							definition.getIsolationLevel() : null);
+	 * 	 * 			TransactionSynchronizationManager.setCurrentTransactionReadOnly(definition.isReadOnly());
+	 * 	 * 			TransactionSynchronizationManager.setCurrentTransactionName(definition.getName());
+	 * 	 * 			TransactionSynchronizationManager.initSynchronization();
+	 * 	 * 	 *
+	 *
+	 *=======================
+	 * 对于DataSourceTransactionManager来说，事务真正开启的地方是在 ：  org.springframework.jdbc.datasource.DataSourceTransactionManager#doBegin
+	 *
+	 * ：Mysql中TransactionManager getTransaction返回的事务对象是什么对象？ DataSourceTransactionManager 返回DataSourceTransactionObject
+	 * 			 * 在DataSourceTransactionManager的实现中 直接new了一个 DataSourceTransactionObject作为事务对象， 他没有考虑当前线程是否已经存在数据库事务。
+	 * 			 * 因此也就是 同一个数据库事务 可以有多个Spring中的事务对象（DataSourceTransactionObject），也就是说
+	 * 			 * 不同的DataSourceTransactionObject对象可能会表示相同的数据库事务对象。Spring中的事务对象和数据库中开启的事务不是等价的。
+	 * DataSourceTransactoinManager 的getTransaction方法返回了事务对象DataSourceTransactionObject， 但是这个事务对象是怎么使用的呢？
+	 * 			 * 实际上这个事务对象 DataSourceTransactionObject内有一个ConnectionHolder 属性，他用来持有连接connection。
+	 * 			 * 在TransactionManager的doBegin的时候，在DataSourceTransactionManager的doBegin方法实现中会真正获取connection，然后将connection设置到 事务对象DataSourceTransactionObject中
+	 * 			 * ，因此我们说是spring中的事务本质上是 持有了一个connection
+	 *
+	 * 在doBegin方法中会调用： con.setAutoCommit(false); 	txObject.getConnectionHolder().setTransactionActive(true); 来标记事务开启
+	 * 同时将connection绑定到ThreadLocal中
+	 * 	TransactionSynchronizationManager.bindResource(obtainDataSource(), txObject.getConnectionHolder());
+	 *
+	 * ===================================
+	 *
+	 * 问题：为什么可以依据TransactionStatus中的transaction来 判断是否存在事务呢？
+	 * 因为我们之前分析过 在Spring的getTransaction方法中，第一步就是调用了doGetTransaction方法 来创建一个DataSourceTransactionObject作为事务对象
+	 * 然后这个事务对象DataSourceTransactionObject又会根据当前事务的级别：是否需要事务，是否需要创建新的事务 ，
+	 * 最终这个事务对象被交给了DefaultTransactionStatus对象中。但是我们注意到如果事务级别是不需要事务，
+	 * 这个时候我们创建了一个DefaultTransactionStatus对象，但是传递的transaction是null，表示他是一个空事务；
+	 * 当事务的级别是需要事务的时候我们会将doGetTransaction返回的事务对象交给DefaultTransactionStatus对象，
+	 * 因此在TransactionStatus中 可以通过TransactionStatus的transaction属性是否为空来判断当前是否存在事务
+	 *
+	 *
+	 *
 	 */
 	public static boolean isActualTransactionActive() {
 		return (actualTransactionActive.get() != null);

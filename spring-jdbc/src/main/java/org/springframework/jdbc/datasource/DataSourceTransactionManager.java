@@ -236,6 +236,15 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 	@Override
 	protected Object doGetTransaction() {
+		/**
+		 * doGetTransaction方法， 在DataSourceTransactionManager的doGetTransaction方法实现中，每次调用doGetTransaction都会new 一个 DataSourceTransactionObject 作为返回值，
+		 * 		 * 那么是不是意味着每次调用doGetTransaction都开启了一个新的事务呢？
+		 * 		 * 答案是不是的： 在doGetTransaction方法的实现中，我们虽然 会创建一个新的 DataSourceTransactionObject 对象，但是事务的实际开启是在dobegin方法中。
+		 * 		 * 而且，在doGetTransaction方法中，我们创建了DataSourceTransactionObject 对象，DataSourceTransactionObject 的本质是通过ConnectionHolder持有connection
+		 * 		 * 在创建DataSourceTransactionObject 的时候我们会查询线程中的 ConnectionHoilder，如果当前线程存在ConnectionHolder，则表示存在事务，这个时候我们会将当前线程的ConnectionHolder设置到新的 DataSourceTransactionObject对象
+		 * 		 * 中， 然后 在doGetTransaction之后 我们会根据这个新的 DataSourceTransactionObject 对象 调用isExistingTransaction 方法来判断当前线程是否已经存在 事务。
+		 * 		 *
+		 */
 		DataSourceTransactionObject txObject = new DataSourceTransactionObject();
 		txObject.setSavepointAllowed(isNestedTransactionAllowed());
 		ConnectionHolder conHolder =
@@ -283,12 +292,49 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 			txObject.getConnectionHolder().setSynchronizedWithTransaction(true);
 			con = txObject.getConnectionHolder().getConnection();
 
+			/**
+			 *
+			 * 指定事务的隔离级别
+			 * 	con.setTransactionIsolation(definition.getIsolationLevel());
+			 *
+			 * 	事务的隔离级别是通过数据库的锁来实现的，这个是数据库的实现，程序无需关心
+			 *
+			 */
 			Integer previousIsolationLevel = DataSourceUtils.prepareConnectionForTransaction(con, definition);
 			txObject.setPreviousIsolationLevel(previousIsolationLevel);
 
 			// Switch to manual commit if necessary. This is very expensive in some JDBC drivers,
 			// so we don't want to do it unnecessarily (for example if we've explicitly
 			// configured the connection pool to set it already).
+			//如果需要，切换到手动提交。这在一些JDBC驱动程序中是非常昂贵的，
+			//因此我们不想做不必要的(例如，如果我们已经显式地
+			//配置连接池来设置它)。
+			/**
+			 *
+			 * 这里可以解释 开启事务
+			 *
+			 * doBegin方法中并没有 执行 “start transaction”这样的sql语句来显示开启一个事务，而且在数据库驱动（mysql-connector-java）的实现中也搜不到 start transaction 这样的sql语句，那么事务到底是怎么开启的呢？
+			 *
+			 *
+			 * 原来，当你获取到连接的时候，默认情况下每执行一条语句都会自动创建一个事务，当我们设置了autoCommit为false的情况下，多个sql语句自动合并到一个事务中，只有你执行了commit的时候事务才会提交，因此不需要使用start transaction语句 。参考下文官方文档。
+			 * 在NativeCat中 模拟如下场景：
+			 * （1）新建查询，打开一个connection
+			 * （2）执行 ： set autocommit0
+			 * （3）执行update
+			 * （4）查看数据并没有发现修改后的值
+			 * （5）执行 commit 后发现修改后的值
+			 * 这就解释了开启事务不需要使用start  transaction ,只需要设置 autoCommit为false， 在 DataSourceTransactionManager的doBegin方法中就将autoCommit设置为false表示开启了一个事务。
+			 *
+			 * 创建连接时，它处于自动提交模式。这意味着每个单独的SQL语句都被视为一个事务，并在执行后立即自动提交。(更准确地说，默认是在SQL语句完成时提交，而不是在执行时提交。当检索到语句的所有结果集和更新计数时，语句就完成了。然而，在几乎所有情况下，语句都是在执行之后完成并提交的。)
+			 * 允许将两个或多个语句分组到一个事务中的方法是禁用自动提交模式。下面的代码演示了这一点，其中con是一个活动连接:
+			 * con.setAutoCommit(false);
+			 * 因此也就是说 实际上数据库的事务不是我们手动开启的，默认情况下每一条sql语句都会有一个事务，
+			 * 在实际应用中我们需要做的 不是开启事务，而是将多个语句放置到一个事务中执行，这个是通过 将autoCommit设置为false来实现的。
+			 *
+			 * https://docs.oracle.com/javase/tutorial/jdbc/basics/transactions.html
+			 *
+			 *
+			 */
 			if (con.getAutoCommit()) {
 				txObject.setMustRestoreAutoCommit(true);
 				if (logger.isDebugEnabled()) {
@@ -419,6 +465,12 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 	 * <p>The "SET TRANSACTION READ ONLY" is understood by Oracle, MySQL and Postgres
 	 * and may work with other databases as well. If you'd like to adapt this treatment,
 	 * override this method accordingly.
+	 * 	 *
+	 * 	 * 在事务开始后立即准备事务连接。
+	 * 	 * 默认实现执行“SET TRANSACTION READ ONLY”语句，如果“enforceReadOnly”标志被设置为true，并且事务定义指示一个只读事务。
+	 * 	 * “SET TRANSACTION READ ONLY”可以被Oracle, MySQL和Postgres理解，也可以用于其他数据库。
+	 * 	 * 如果您想采用这种处理方法，请相应地重写此方法。
+	 * 	 *
 	 * @param con the transactional JDBC Connection
 	 * @param definition the current transaction definition
 	 * @throws SQLException if thrown by JDBC API
