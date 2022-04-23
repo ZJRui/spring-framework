@@ -39,6 +39,9 @@ import org.springframework.web.util.UrlPathHelper;
  * to the constructor, the {@link MediaTypeFactory} is used as a fallback
  * mechanism.
  *
+ * 将请求路径中的文件扩展名解析为用于查找媒体类型的键的ContentNegotiationStrategy 。
+ * 如果在提供给构造函数的显式注册中找不到文件扩展名，则使用MediaTypeFactory作为回退机制。
+ *
  * @author Rossen Stoyanchev
  * @since 3.2
  */

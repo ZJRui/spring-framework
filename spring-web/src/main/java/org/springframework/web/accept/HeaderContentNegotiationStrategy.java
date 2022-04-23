@@ -28,7 +28,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 
 /**
  * A {@code ContentNegotiationStrategy} that checks the 'Accept' request header.
- *
+ *检查“接受”请求标头的ContentNegotiationStrategy 。
  * @author Rossen Stoyanchev
  * @author Juergen Hoeller
  * @since 3.2

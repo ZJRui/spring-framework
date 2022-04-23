@@ -29,6 +29,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 /**
  * A {@code ContentNegotiationStrategy} that returns a fixed content type.
  *
+ * 返回固定内容类型的ContentNegotiationStrategy
  * @author Rossen Stoyanchev
  * @since 3.2
  */
