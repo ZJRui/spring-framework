@@ -978,6 +978,13 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 					}
 				}
 			};
+			/**
+			 * Dubbo启动时注册JVM钩子函数，完成优雅停机。
+			 * 服务提供者取消注册服务元数据信息，consumer端收到最新的地址列表，考虑到注册中心推送服务有网络延迟，Dubbo协议会发送readonly事件报文通知消费端服务不可用。
+			 * 服务端等待已经执行的任务结束并拒绝新任务执行。为什么要发送readonly报文：考虑到注册中心推送服务有网络延迟，consumer收到readonly后会设置provide为不可用这状态，下次负载均衡不会调用下线的机器。
+			 * 如果用户使用kill -9 pid 强制关闭指令，是不会执行优雅停机的，只有通过kill pid才会执行。
+			 * Spring也会注册JVM停止钩子函数，
+			 */
 			Runtime.getRuntime().addShutdownHook(this.shutdownHook);
 		}
 	}
