@@ -289,6 +289,17 @@ class CglibAopProxy implements AopProxy, Serializable {
 		// Choose an "aop" interceptor (used for AOP calls).
 		//在使用cglib创建动态代理类是，首先需要定义一个callback接口的实现类，cglib中也提供了多个callback接口的子接口
 		//比如Dispatcher LazyLoader MethodInterceptor NoOp   InvocationHandler  ProxyRefDispatcher FixedValue，下面的DynamicAdvisedInterceptor就是MethodInterceptor的实现
+		/*
+		  1，JDK动态带来
+2.Cglib 
+//在使用cglib创建动态代理类是，首先需要定义一个callback接口的实现类，cglib中也提供了多个callback接口的子接口//比如Dispatcher LazyLoader MethodInterceptor NoOp   InvocationHandler  ProxyRefDispatcher FixedValue，下面的DynamicAdvisedInterceptor就是MethodInterceptor的实现Callback aopInterceptor = new DynamicAdvisedInterceptor(this.advised);
+enhancer.setSuperClass(class)
+enhancer.setCallback(DynamicAdvisedInterceptor)
+return  enhancer.create()//通过字节码技术动态创建子类实例
+
+3.javassist 是开源的 字节码生成类库，可以动态生成类。
+Javassist通过创建目标类的子类地方昂视实现动态代理功能
+		*/
 		Callback aopInterceptor = new DynamicAdvisedInterceptor(this.advised);
 
 		// Choose a "straight to target" interceptor. (used for calls that are
