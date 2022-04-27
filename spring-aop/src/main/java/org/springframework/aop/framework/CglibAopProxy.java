@@ -287,6 +287,8 @@ class CglibAopProxy implements AopProxy, Serializable {
 		boolean isStatic = this.advised.getTargetSource().isStatic();
 
 		// Choose an "aop" interceptor (used for AOP calls).
+		//在使用cglib创建动态代理类是，首先需要定义一个callback接口的实现类，cglib中也提供了多个callback接口的子接口
+		//比如Dispatcher LazyLoader MethodInterceptor NoOp   InvocationHandler  ProxyRefDispatcher FixedValue，下面的DynamicAdvisedInterceptor就是MethodInterceptor的实现
 		Callback aopInterceptor = new DynamicAdvisedInterceptor(this.advised);
 
 		// Choose a "straight to target" interceptor. (used for calls that are
