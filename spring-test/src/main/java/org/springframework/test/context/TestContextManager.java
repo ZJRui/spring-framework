@@ -121,6 +121,60 @@ public class TestContextManager {
 	 * @see #TestContextManager(TestContextBootstrapper)
 	 */
 	public TestContextManager(Class<?> testClass) {
+		/**
+		 * @SpringBootTest注解 定义了@BootstrapWith 指定一个TestContextBootstrapper
+		 * 获取TestContextBootstrapper 从而创建 BootstrapContext
+		 *
+		 * BootstrapUtils  resolve解析到 TestContextBootstrapper 后 调用  this构造器
+		 *
+		 * 在TestContextManager的 构造器中执行
+		 * this.testContext = testContextBootstrapper.buildTestContext();
+		 *
+		 *
+		 * 在buildTestContext的过程中 会执行 buildMergedContextConfiguration
+		 *
+		 * 然后 buildTestContext 返回 的TestContext 中有getApplicationContex方法
+		 * 这个get方法  会执行 loadContext
+		 * 		ApplicationContext context = this.cacheAwareContextLoaderDelegate.loadContext(this.mergedContextConfiguration);
+		 *
+		 *在loadContext中执行  通过SpringBootContextLoader的loadContext 方法创建 SpringApplication 并执行
+		 * SpringBoot的启动
+		 *
+		 *
+		 * ----------
+		 *
+		SpringJunit4ClassRunner 创建 TestContextManager。
+		TestContextManager 创建一个TestContextBootstrapper。
+		TestContextBootstrapper 对象内有一个buildTestContext方法来创建一个TestContext对象
+
+
+		TestContext 对象中有一个getApplicationContext方法来获取 ApplicationContext
+		testContext对象中有getTestClass 和getTestInstance方法来获取测试类的类和测试类示例对象。
+		TestContext对象中有一个getTestmethod方法 返回Method 对象表示要测试的方法。
+
+
+		TestContextManager的构造器 中 会调用TestContextBootstrapper的buildTestContext 方法来 创建一个 DefaultTestContext 对象。
+		我们说TestContext 中有一个getApplicationContext方法能够返回一个ApplicationContext。
+
+		TestContextManager 在 通过 TestContextBootstrapper的buildTestContext方法创建DefaultTestContext时会 先准备Configuration。 这个configuration时通过解析 TestClass 测试类上的@ContextConfiguration 注解得到的
+
+
+		实际上 TestContext对象内部包含了三部分信息
+		（1）TestClass （包括 TestInstance 示例 和TestMethod）， TestContext 方法提供了updateState 方法来更新自身内部的 TestInstance和 TestMethod方法
+		（2）configuration： 通过解析TestClass上的@ContextConfiguration得到
+		（3）CacheAwareContextLoaderDelegate   TestContext对外提供getApplicationContext方法。 内部实现时委托给
+		CacheAwareContextLoaderDelegate去实现的。 cacheAwareContextLoaderDelegate 对象提供了loadContext方法加载TestContext的配置信息 创建 ApplicationContext。 CacheAwareContextLoaderDelegate的loadContext方法内部做了缓存，因此对相同的configuration 并不户重复创建ApplicationiContext对象。
+
+		DefaultCacheAwareContextLoaderDelegate对象 在loadContextInternal的时候 会根据configration 来获取一个ContextLoader。
+		然后使用这个ContextLoader来 loadContext
+
+		普通的ContextLoader 就是创建 GenericApplicationContext  ，然后 loadBeanDefinitions（configs）
+		在SpringBoot中提供了一个SpringBootContextLoader ，这个contextLoader的loadContext方法内部不是直接创建spring容器，而是创建 SpringApplication 执行application.run(args); 来走了SpringBoot的那套流程。
+
+		 *
+		 *
+		 *
+		 */
 		this(BootstrapUtils.resolveTestContextBootstrapper(BootstrapUtils.createBootstrapContext(testClass)));
 	}
 
@@ -136,6 +190,42 @@ public class TestContextManager {
 	 * @see #registerTestExecutionListeners
 	 */
 	public TestContextManager(TestContextBootstrapper testContextBootstrapper) {
+		/**
+		 *
+		 * 这里创建创建 Test Context对象
+		 *
+		 *
+		 *
+		 SpringJunit4ClassRunner 创建 TestContextManager。
+		 TestContextManager 创建一个TestContextBootstrapper。
+		 TestContextBootstrapper 对象内有一个buildTestContext方法来创建一个TestContext对象
+
+
+		 TestContext 对象中有一个getApplicationContext方法来获取 ApplicationContext
+		 testContext对象中有getTestClass 和getTestInstance方法来获取测试类的类和测试类示例对象。
+		 TestContext对象中有一个getTestmethod方法 返回Method 对象表示要测试的方法。
+
+
+		 TestContextManager的构造器 中 会调用TestContextBootstrapper的buildTestContext 方法来 创建一个 DefaultTestContext 对象。
+		 我们说TestContext 中有一个getApplicationContext方法能够返回一个ApplicationContext。
+
+		 TestContextManager 在 通过 TestContextBootstrapper的buildTestContext方法创建DefaultTestContext时会 先准备Configuration。 这个configuration时通过解析 TestClass 测试类上的@ContextConfiguration 注解得到的
+
+
+		 实际上 TestContext对象内部包含了三部分信息
+		 （1）TestClass （包括 TestInstance 示例 和TestMethod）， TestContext 方法提供了updateState 方法来更新自身内部的 TestInstance和 TestMethod方法
+		 （2）configuration： 通过解析TestClass上的@ContextConfiguration得到
+		 （3）CacheAwareContextLoaderDelegate   TestContext对外提供getApplicationContext方法。 内部实现时委托给
+		 CacheAwareContextLoaderDelegate去实现的。 cacheAwareContextLoaderDelegate 对象提供了loadContext方法加载TestContext的配置信息 创建 ApplicationContext。 CacheAwareContextLoaderDelegate的loadContext方法内部做了缓存，因此对相同的configuration 并不户重复创建ApplicationiContext对象。
+
+		 DefaultCacheAwareContextLoaderDelegate对象 在loadContextInternal的时候 会根据configration 来获取一个ContextLoader。
+		 然后使用这个ContextLoader来 loadContext
+
+		 普通的ContextLoader 就是创建 GenericApplicationContext  ，然后 loadBeanDefinitions（configs）
+		 在SpringBoot中提供了一个SpringBootContextLoader ，这个contextLoader的loadContext方法内部不是直接创建spring容器，而是创建 SpringApplication 执行application.run(args); 来走了SpringBoot的那套流程。
+
+		 *
+		 */
 		this.testContext = testContextBootstrapper.buildTestContext();
 		registerTestExecutionListeners(testContextBootstrapper.getTestExecutionListeners());
 	}
@@ -204,14 +294,130 @@ public class TestContextManager {
 	 * @see #getTestExecutionListeners()
 	 */
 	public void beforeTestClass() throws Exception {
+		/**
+		 * 在ParentRunner的classBlock方法中会 首先 通过childrenInvoker获得一个Statmenet。
+		 * 然后对这个Statement进行包装，withBeforeClasses 方法包装后将会在 Statement之前之前执行@BeforeClass 注解标注对方法
+		 * 同样对withAfterClasses 将获取@AfterClass注解。
+		 *
+		 *
+		 *   protected Statement classBlock(final RunNotifier notifier) {
+		 *         Statement statement = childrenInvoker(notifier);
+		 *         if (!areAllChildrenIgnored()) {
+		 *             statement = withBeforeClasses(statement);
+		 *             statement = withAfterClasses(statement);
+		 *             statement = withClassRules(statement);
+		 *             statement = withInterruptIsolation(statement);
+		 *         }
+		 *         return statement;
+		 *     }
+		 *
+		 *     当执行
+		 *     beforeTestClass:205, TestContextManager (org.springframework.test.context)
+		 * evaluate:60, RunBeforeTestClassCallbacks (org.springframework.test.context.junit4.statements)
+		 * evaluate:70, RunAfterTestClassCallbacks (org.springframework.test.context.junit4.statements)
+		 * evaluate:306, ParentRunner$3 (org.junit.runners)
+		 * run:413, ParentRunner (org.junit.runners)
+		 * run:190, SpringJUnit4ClassRunner (org.springframework.test.context.junit4)
+		 * run:137, JUnitCore (org.junit.runner)
+		 * startRunnerWithArgs:69, JUnit4IdeaTestRunner (com.intellij.junit4)
+		 * execute:38, IdeaTestRunner$Repeater$1 (com.intellij.rt.junit)
+		 * repeat:11, TestsRepeater (com.intellij.rt.execution.junit)
+		 * startRunnerWithArgs:35, IdeaTestRunner$Repeater (com.intellij.rt.junit)
+		 * prepareStreamsAndStart:235, JUnitStarter (com.intellij.rt.junit)
+		 * main:54, JUnitStarter (com.intellij.rt.junit)
+		 *
+		 * runner对run方法对时候 ，执行statement对evaluate 将会执行 这里对TestContextManager的beforeTestClass 方法
+		 * 在这个beforeTestClass 方法中首先执行了 getTestContext方法。
+		 *
+		 * 这个getTestContext 方法内部 会从 ThreadLocal testContextHolder 中取值，从而触发testContextHolder的初始化。
+		 * testContextHolder的初始化是浅拷贝了 当前TestContextManager的testContext对象
+		 * copyTestContext(TestContextManager.this.testContext);
+		 * copyTestContext方法内部会通过反射创建 新的DefaultTestContext对象，这个新的DefaultTestContext对象 内部持有的数据
+		 * 和TestContextManager中的 testContext对象持有的数据相同。
+		 *
+		 *
+		 *
+		 *
+		 *
+		 * 问题 ： 这里为什么要考拷贝而不是直接使用 TestContextManager的 testContext
+		 *  实际上 TestContext对象内部包含了三部分信息
+		 *  （1）TestClass （包括 TestInstance 示例 和TestMethod）， TestContext 方法提供了updateState 方法来更新自身内部的 TestInstance和 TestMethod方法
+		 *  （2）configuration： 通过解析TestClass上的@ContextConfiguration得到
+		 *  （3）CacheAwareContextLoaderDelegate   TestContext对外提供getApplicationContext方法。 内部实现时委托给
+		 *  CacheAwareContextLoaderDelegate去实现的。 cacheAwareContextLoaderDelegate 对象提供了loadContext方法加载TestContext的配置信息 创建 ApplicationContext。 CacheAwareContextLoaderDelegate的loadContext方法内部做了缓存，因此对相同的configuration 并不户重复创建ApplicationiContext对象。
+		 *
+		 *  DefaultCacheAwareContextLoaderDelegate对象 在loadContextInternal的时候 会根据configration 来获取一个ContextLoader。
+		 *  然后使用这个ContextLoader来 loadContext
+		 *
+		 *  普通的ContextLoader 就是创建 GenericApplicationContext  ，然后 loadBeanDefinitions（configs）
+		 *  在SpringBoot中提供了一个SpringBootContextLoader ，这个contextLoader的loadContext方法内部不是直接创建spring容器，而是创建 SpringApplication 执行application.run(args); 来走了SpringBoot的那套流程。
+		 *
+		 *  在执行beforeTestClass 时 TestContext 还没有 进行applicationContext的初始化。
+		 *
+		 *  我们使用 testContextHolder 这个ThreadLocal  为每一个线程 创建一个TestContext，然后让每个线程负责创建自己的Spring容器
+		 *
+		 *
+		 *
+		 *
+		 *
+		 */
 		Class<?> testClass = getTestContext().getTestClass();
 		if (logger.isTraceEnabled()) {
 			logger.trace("beforeTestClass(): class [" + testClass.getName() + "]");
 		}
+		/**
+		 * 注意这里 获取testContext的方式 ，是通过 testContextHolder这个threadLocal获取
+		 *
+		 * 通过 updateState 方法 将当前线程的 TestContex对象 内部持有的TestInstance 设置为null， testMethod也设置为null
+		 *
+		 *
+		 * 问题： TestClass 测试实例的创建是在什么时候？ 答案是在methodBlock方法中会 首先通过反射创建一个TestInstance对象
+		 * 然后将这个TestInstance对象和当前要测试的 method 一起封装成一个InvokeMethod Statement对象。
+		 * 然后在createTest  创建测试实例对象之后会执行        getTestContextManager().prepareTestInstance(testInstance);
+		 * 对testInstances进行依赖注入。依赖注入的前提条件是ApplicationContext准备好了，所以又会触发Spring容器的创建。
+		 *
+		 * <init>:25, TestConfigB (com.example.demo.configtest)
+		 * newInstance0:-1, NativeConstructorAccessorImpl (sun.reflect)
+		 * newInstance:62, NativeConstructorAccessorImpl (sun.reflect)
+		 * newInstance:45, DelegatingConstructorAccessorImpl (sun.reflect)
+		 * newInstance:423, Constructor (java.lang.reflect)
+		 * createTest:250, BlockJUnit4ClassRunner (org.junit.runners)
+		 * createTest:226, SpringJUnit4ClassRunner (org.springframework.test.context.junit4)
+		 * runReflectiveCall:289, SpringJUnit4ClassRunner$1 (org.springframework.test.context.junit4)
+		 * run:12, ReflectiveCallable (org.junit.internal.runners.model)
+		 * methodBlock:291, SpringJUnit4ClassRunner (org.springframework.test.context.junit4)
+		 * runChild:246, SpringJUnit4ClassRunner (org.springframework.test.context.junit4)
+		 * runChild:97, SpringJUnit4ClassRunner (org.springframework.test.context.junit4)
+		 * run:331, ParentRunner$4 (org.junit.runners)
+		 * schedule:79, ParentRunner$1 (org.junit.runners)
+		 * runChildren:329, ParentRunner (org.junit.runners)
+		 * access$100:66, ParentRunner (org.junit.runners)
+		 * evaluate:293, ParentRunner$2 (org.junit.runners)
+		 * evaluate:61, RunBeforeTestClassCallbacks (org.springframework.test.context.junit4.statements)
+		 * evaluate:70, RunAfterTestClassCallbacks (org.springframework.test.context.junit4.statements)
+		 * evaluate:306, ParentRunner$3 (org.junit.runners)
+		 * run:413, ParentRunner (org.junit.runners)
+		 * run:190, SpringJUnit4ClassRunner (org.springframework.test.context.junit4)
+		 * run:137, JUnitCore (org.junit.runner)
+		 *
+		 *
+		 *  下面这段代码是createTest创建 测试对象成功之后对其进行依赖注入，触发Spring容器的创建
+		 * loadContext:120, DefaultCacheAwareContextLoaderDelegate (org.springframework.test.context.cache)
+		 * getApplicationContext:124, DefaultTestContext (org.springframework.test.context.support)
+		 * setUpRequestContextIfNecessary:190, ServletTestExecutionListener (org.springframework.test.context.web)
+		 * prepareTestInstance:132, ServletTestExecutionListener (org.springframework.test.context.web)
+		 * prepareTestInstance:248, TestContextManager (org.springframework.test.context)
+		 * createTest:227, SpringJUnit4ClassRunner (org.springframework.test.context.junit4)
+		 *
+		 *
+		 */
 		getTestContext().updateState(null, null, null);
 
 		for (TestExecutionListener testExecutionListener : getTestExecutionListeners()) {
 			try {
+				/**
+				 *
+				 */
 				testExecutionListener.beforeTestClass(getTestContext());
 			}
 			catch (Throwable ex) {

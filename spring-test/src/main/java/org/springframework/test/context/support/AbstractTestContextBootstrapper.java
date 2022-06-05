@@ -105,6 +105,36 @@ public abstract class AbstractTestContextBootstrapper implements TestContextBoot
 	 */
 	@Override
 	public TestContext buildTestContext() {
+		/**
+		 *
+		 SpringJunit4ClassRunner 创建 TestContextManager。
+		 TestContextManager 创建一个TestContextBootstrapper。
+		 TestContextBootstrapper 对象内有一个buildTestContext方法来创建一个TestContext对象
+
+
+		 TestContext 对象中有一个getApplicationContext方法来获取 ApplicationContext
+		 testContext对象中有getTestClass 和getTestInstance方法来获取测试类的类和测试类示例对象。
+		 TestContext对象中有一个getTestmethod方法 返回Method 对象表示要测试的方法。
+
+
+		 TestContextManager的构造器 中 会调用TestContextBootstrapper的buildTestContext 方法来 创建一个 DefaultTestContext 对象。
+		 我们说TestContext 中有一个getApplicationContext方法能够返回一个ApplicationContext。
+
+		 TestContextManager 在 通过 TestContextBootstrapper的buildTestContext方法创建DefaultTestContext时会 先准备Configuration。 这个configuration时通过解析 TestClass 测试类上的@ContextConfiguration 注解得到的
+
+
+		 实际上 TestContext对象内部包含了三部分信息
+		 （1）TestClass （包括 TestInstance 示例 和TestMethod）， TestContext 方法提供了updateState 方法来更新自身内部的 TestInstance和 TestMethod方法
+		 （2）configuration： 通过解析TestClass上的@ContextConfiguration得到
+		 （3）CacheAwareContextLoaderDelegate   TestContext对外提供getApplicationContext方法。 内部实现时委托给
+		 CacheAwareContextLoaderDelegate去实现的。 cacheAwareContextLoaderDelegate 对象提供了loadContext方法加载TestContext的配置信息 创建 ApplicationContext。 CacheAwareContextLoaderDelegate的loadContext方法内部做了缓存，因此对相同的configuration 并不户重复创建ApplicationiContext对象。
+
+		 DefaultCacheAwareContextLoaderDelegate对象 在loadContextInternal的时候 会根据configration 来获取一个ContextLoader。
+		 然后使用这个ContextLoader来 loadContext
+
+		 普通的ContextLoader 就是创建 GenericApplicationContext  ，然后 loadBeanDefinitions（configs）
+		 在SpringBoot中提供了一个SpringBootContextLoader ，这个contextLoader的loadContext方法内部不是直接创建spring容器，而是创建 SpringApplication 执行application.run(args); 来走了SpringBoot的那套流程。
+		 */
 		return new DefaultTestContext(getBootstrapContext().getTestClass(), buildMergedContextConfiguration(),
 				getCacheAwareContextLoaderDelegate());
 	}

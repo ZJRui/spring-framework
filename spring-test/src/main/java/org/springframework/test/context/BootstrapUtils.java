@@ -68,11 +68,25 @@ abstract class BootstrapUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	static BootstrapContext createBootstrapContext(Class<?> testClass) {
+		//创建 CacheAwareContextLoaderDelegate 对象
 		CacheAwareContextLoaderDelegate cacheAwareContextLoaderDelegate = createCacheAwareContextLoaderDelegate();
 		Class<? extends BootstrapContext> clazz = null;
 		try {
+			/**
+			 * 使用类加载器  加载默认的 bootstrapContext类 ： DefaultBootstrapContext
+			 * 然后使用反射的技术创建DefaultBootstrapContext
+			 *
+			 *
+			 */
 			clazz = (Class<? extends BootstrapContext>) ClassUtils.forName(
 					DEFAULT_BOOTSTRAP_CONTEXT_CLASS_NAME, BootstrapUtils.class.getClassLoader());
+			/**
+			 * 注意 在 创建DefaultBootStrapContext 之前， 首先是 获取了DefaultBootstrapContext的构造器， 这个构造器的第一个参数
+			 * 是一个Class类型， 第二个参数是CacheAwareContextLoaderDelegate
+			 *
+			 * 也就是 我们调用 了DefaultBootstrapContext 的构造器，传递了 testClassz作为第一个参数， cacheAwareContextLoaderDelegate
+			 * 作为第二个参数
+			 */
 			Constructor<? extends BootstrapContext> constructor = clazz.getConstructor(
 					Class.class, CacheAwareContextLoaderDelegate.class);
 			if (logger.isDebugEnabled()) {
@@ -120,10 +134,19 @@ abstract class BootstrapUtils {
 	 * @return a fully configured {@code TestContextBootstrapper}
 	 */
 	static TestContextBootstrapper resolveTestContextBootstrapper(BootstrapContext bootstrapContext) {
+		/**
+		 * BootstrapContext 对象持有 TestClass测试类的类对象 和一个CacheAwareContextLoaderDelegate 对象
+		 */
 		Class<?> testClass = bootstrapContext.getTestClass();
 
 		Class<?> clazz = null;
 		try {
+			/**
+			 * 解析测试类上的 BootstrapWith 注解
+			 * 对于SpringBoot 的测试类  @SpringBootTest注解聚合了 @BootstrapWith(SpringBootTestContextBootstrapper.class)
+			 *
+			 * 当不使用SpringBoot时，默认情况下  解析得到的BootstrapWith的注解 得到的是 DefaultTestContextBootstrapper
+			 */
 			clazz = resolveExplicitTestContextBootstrapper(testClass);
 			if (clazz == null) {
 				clazz = resolveDefaultTestContextBootstrapper(testClass);
@@ -132,6 +155,20 @@ abstract class BootstrapUtils {
 				logger.debug(String.format("Instantiating TestContextBootstrapper for test class [%s] from class [%s]",
 						testClass.getName(), clazz.getName()));
 			}
+			/**
+			 * @TestContextBootstrapper注解需要指定一个TestContextBootstrapper 类，默认情况下是
+			 * DefaultTestContextBootstrapper， 这里就是通过反射创建 DefaultTestContextBootstrapper对象
+			 *
+			 * 那么TestContextBootstrapper有什么用呢？
+			 * A TestContextBootstrapper is used by the TestContextManager to get the TestExecutionListeners for the current test and to build the TestContext that it manages.
+			 * Configuration
+			 * 也就是说 TestContextBootstrapper 这个类中有一个 buildTestContext 方法
+			 * 这个 方法可以创建一个TextContext对象。
+			 *
+			 *
+			 *
+			 *
+			 */
 			TestContextBootstrapper testContextBootstrapper =
 					BeanUtils.instantiateClass(clazz, TestContextBootstrapper.class);
 			testContextBootstrapper.setBootstrapContext(bootstrapContext);

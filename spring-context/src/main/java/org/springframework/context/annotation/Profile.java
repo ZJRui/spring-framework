@@ -103,6 +103,42 @@ import org.springframework.core.env.Profiles;
 public @interface Profile {
 
 	/**
+	 * 有三个注解：
+	 * @Profile  @ActiveProfile  @IfProfileValue
+	 *
+	 *（1）@Profile 是spring中的正式注解，非test包下的注解，而且这个注解本质上是一个Condition。
+	 * 经常的用法是 在一个配置类中 对@Bean标记的方法 加上@Profile注解	 ，标记如果当前启用的配置文件是 指定的
+	 * Profile则注入这个Bean。 典型场景是  两个@Bean标记的创建DataSource的方法， 一个是正式数据库，一个是测试数据库
+	 * 这种情况下根据 当前启用的Profile不同注入不同的 DataSource
+	 *  @Bean
+	 *     @Profile("upper")
+	 *     public UpperAction upperAction1(){
+	 *         return  new UpperAction("Tom");
+	 *     }
+	 *
+	 *     @Bean
+	 *     @Profile("upper1")
+	 *     public UpperAction upperAction2(){
+	 *         return  new UpperAction("Jack");
+	 *     }
+	 *
+	 *
+	 *  （2）@ActiveProfiles是test模块下的注解，   典型用法是 在配置类上 标记改注解，表示启用某 profile
+	 *
+	 *  （3）@IfProfileValue 也是test模块下的类。 用来标注在方法或者类上。
+	 *   @IfProfileValue(name = "test-groups", values = { "unit-tests", "integration-tests" })
+	 *   public void testWhichRunsForUnitOrIntegrationTestGroups() {
+	 *     // ...
+	 *     }
+	 *     表示 ，这个方法只有在  unit-tests的值 为 unit-tests或者 integration-tests时候才会执行
+	 *     The above test method would be executed if you set the test-groups system property (e.g., -Dtest-groups=unit-tests or -Dtest-groups=integration-tests).
+	 *
+	 *
+	 */
+
+
+
+	/**
 	 * The set of profiles for which the annotated component should be registered.
 	 */
 	String[] value();

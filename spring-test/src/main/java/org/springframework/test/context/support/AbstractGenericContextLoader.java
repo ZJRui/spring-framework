@@ -113,7 +113,7 @@ public abstract class AbstractGenericContextLoader extends AbstractContextLoader
 
 		ApplicationContext parent = mergedConfig.getParentApplicationContext();
 		if (parent != null) {
-			context.setParent(parent);
+			context.setParent(parent);0
 		}
 
 		prepareContext(context);
