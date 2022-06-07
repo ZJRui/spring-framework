@@ -258,6 +258,8 @@ abstract class ContextLoaderUtils {
 	 * Convenience method for creating a {@link ContextConfigurationAttributes}
 	 * instance from the supplied {@link ContextConfiguration} annotation and
 	 * declaring class and then adding the attributes to the supplied list.
+	 *
+	 * 用于从提供的 ContextConfiguration 注释创建 ContextConfigurationAttributes 实例并声明类然后将属性添加到提供的列表的便捷方法。
 	 */
 	private static void convertContextConfigToConfigAttributesAndAddToList(ContextConfiguration contextConfiguration,
 			Class<?> declaringClass, final List<ContextConfigurationAttributes> attributesList) {

@@ -75,6 +75,27 @@ import org.springframework.core.annotation.AliasFor;
  * <p>This annotation may be used as a <em>meta-annotation</em> to create custom
  * <em>composed annotations</em>.
  *
+ * @ContextConfiguration定义了类级别的元数据，用于确定如何为集成测试加载和配置ApplicationContext。
+ * 支持资源类型
+ * 在Spring 3.1之前，只支持基于路径的资源位置(通常是XML配置文件)。
+ * 从Spring 3.1开始，上下文加载器可以选择支持基于路径的资源或基于类的资源。
+ * 从Spring 4.0.4开始，上下文加载器可以选择同时支持基于路径的资源和基于类的资源。
+ * 因此，@ContextConfiguration可以用来声明基于路径的资源位置(通过location或value属性)或组件类(通过classes属性)。
+ * 但是请注意，大多数SmartContextLoader的实现只支持一种资源类型。从Spring 4.1开始，
+ * 基于路径的资源位置可以是XML配置文件或Groovy脚本(如果Groovy在类路径上)。当然，第三方框架也可以选择支持其他类型的基于路径的资源。
+ * 组件类
+ * 术语组件类可以指以下任何一种。
+ * 用@Configuration注释的类
+ * 一个组件(例如，一个用@Component、@Service、@Repository等标注的类)
+ * 一个兼容JSR-330的类，用javax做了注释。注入注解
+ * 任何包含@ bean方法的类
+ * 任何其他打算注册为Spring组件的类(例如，ApplicationContext中的Spring bean)，可能利用单个构造函数的自动装配，而不使用Spring注释
+ * 将在ApplicationContext中为每个组件类注册一个bean，这样的bean就可以注入到其他bean或测试类的实例中。
+ * 有关组件类的配置和语义的进一步信息，请参阅Javadoc的@Configuration和@Bean。
+ * 这个注释可以作为元注释来创建自定义的组合注释。
+ * 自:
+ * 2.5
+ *
  * @author Sam Brannen
  * @since 2.5
  * @see ContextHierarchy
@@ -91,6 +112,26 @@ import org.springframework.core.annotation.AliasFor;
 @Documented
 @Inherited
 public @interface ContextConfiguration {
+
+	/**
+	 *
+	 * @ContextConfiguration Spring整合JUnit4测试时，使用注解引入多个配置文件
+	 * 1.1 单个文件
+	 * @ContextConfiguration(locations="../applicationContext.xml")
+	 *
+	 * @ContextConfiguration(classes = SimpleConfiguration.class)
+	 * 可用{}
+	 *
+	 * @ContextConfiguration(locations = { "classpath*:/spring1.xml", "classpath*:/spring2.xml" })
+	 *
+	 * 1.3 默认不写
+	 * 可以根据测试的类名，去找到与之对应的配置文件。比如当前 使用@ContextConfiguration 标记的类 A， 如果没有配置注解的value属性
+	 * 那么就会在对应的resource下的类目录下寻找A-context.xml
+	 * 信息: Could not detect default resource locations for test class
+	 * [soundsystem.CNamespaceValueTest]: class path resource [soundsystem/CNamespaceValueTest-context.xml] does not exist
+	 *
+	 *
+	 */
 
 	/**
 	 * Alias for {@link #locations}.
@@ -289,6 +330,10 @@ public @interface ContextConfiguration {
 	 * can be used for <em>merging</em> or <em>overriding</em> this configuration
 	 * with configuration of the same name in hierarchy levels defined in superclasses.
 	 * See the Javadoc for {@link ContextHierarchy @ContextHierarchy} for details.
+	 *
+	 * 此配置表示的上下文层次结构级别的名称。如果未指定，则将根据层次结构中所有声明的上下文中的数字级别推断名称。
+	 * 此属性仅在使用 @ContextHierarchy 配置的测试类层次结构中使用时适用，在这种情况下，
+	 * 该名称可用于合并或覆盖此配置与超类中定义的层次结构级别中的相同名称的配置。有关详细信息，请参阅 @ContextHierarchy 的 Javadoc。
 	 * @since 3.2.2
 	 */
 	String name() default "";

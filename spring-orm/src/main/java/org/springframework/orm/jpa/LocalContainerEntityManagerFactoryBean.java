@@ -73,6 +73,17 @@ import org.springframework.util.ClassUtils;
  * JPA 1.0/2.0 based applications are still supported; however, a JPA 2.1 compliant
  * persistence provider is needed at runtime.
  *
+ * 根据JPA的标准容器引导契约创建JPA EntityManagerFactory。这是在Spring应用程序上下文中建立共享JPA EntityManagerFactory的最强大的方法;
+ * 然后，EntityManagerFactory可以通过依赖注入传递给基于jpa的dao。注意，切换到JNDI查找或LocalEntityManagerFactoryBean定义只是一个配置问题!
+ * 与LocalEntityManagerFactoryBean一样，配置设置通常从META-INF/persistence.xml配置文件中读取，根据通用JPA配置契约，该配置文件驻留在类路径中
+ * 。但是，这个FactoryBean更灵活，因为您可以覆盖persistence.xml文件的位置，指定要链接到的JDBC数据源，等等。
+ * 此外，它允许通过Spring的LoadTimeWeaver抽象实现可插入类插装，而不是绑定到JVM启动时指定的特殊VM代理。
+ * 在内部，这个FactoryBean解析persistence.xml文件本身，并创建一个相应的PersistenceUnitInfo对象(
+ * 合并了进一步的配置，例如JDBC DataSources和Spring LoadTimeWeaver)，将其传递给所选的JPA PersistenceProvider。
+ * 这与完全支持标准JPA容器契约的本地JPA容器相对应。
+ * 暴露的EntityManagerFactory对象将实现由PersistenceProvider返回的底层原生EntityManagerFactory的所有接口，加上暴露由该FactoryBean组装的附加元数据的EntityManagerFactoryInfo接口。
+ * 注意:从Spring 5.0开始，Spring的JPA支持需要JPA 2.1或更高。仍然支持基于JPA 1.0/2.0的应用程序;然而，在运行时需要一个兼容JPA 2.1的持久性提供者。
+ *
  * @author Juergen Hoeller
  * @author Rod Johnson
  * @since 2.0

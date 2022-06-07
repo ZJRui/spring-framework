@@ -56,6 +56,19 @@ import javax.persistence.spi.PersistenceProvider;
  * JPA 1.0/2.0 based applications are still supported; however, a JPA 2.1 compliant
  * persistence provider is needed at runtime.
  *
+ *
+ * 根据JPA的标准独立引导契约创建JPA EntityManagerFactory。这是在Spring应用程序上下文中建立共享JPA EntityManagerFactory的最简单的方法;
+ * 然后，EntityManagerFactory可以通过依赖注入传递给基于jpa的dao。注意，切换到JNDI查找或LocalContainerEntityManagerFactoryBean定义只是一个配置问题!
+ * 根据JPA独立引导契约，配置设置通常从META-INF/persistence.xml配置文件中读取，该文件驻留在类路径中。
+ * 此外，大多数JPA提供者将需要一个特殊的VM代理(在JVM启动时指定)，该代理允许它们检测应用程序类。
+ * 有关设置细节，请参阅Java Persistence API规范和您的提供商文档。
+ * 这个EntityManagerFactory引导程序适用于仅使用JPA进行数据访问的独立应用程序。如果您想为外部DataSource和/或跨多个资源的全局事务设置持久提供程序，
+ * 您需要将其部署到完整的Java EE应用服务器，并通过JNDI访问部署的EntityManagerFactory。
+ * 或者使用Spring的LocalContainerEntityManagerFactoryBean，并根据JPA的容器契约进行适当的本地设置配置。
+ * 注意:就能够传递给JPA提供者的配置而言，这个FactoryBean的配置能力有限。如果您需要更灵活的配置，例如将一个Spring管理的JDBC数据源传递给JPA提供者，
+ * 请考虑使用Spring更强大的LocalContainerEntityManagerFactoryBean。
+ * 注意:从Spring 5.0开始，Spring的JPA支持需要JPA 2.1或更高。仍然支持基于JPA 1.0/2.0的应用程序;然而，在运行时需要一个兼容JPA 2.1的持久性提供者。
+ *
  * @author Juergen Hoeller
  * @author Rod Johnson
  * @since 2.0
@@ -67,6 +80,7 @@ import javax.persistence.spi.PersistenceProvider;
  * @see org.springframework.orm.jpa.support.SharedEntityManagerBean
  * @see javax.persistence.Persistence#createEntityManagerFactory
  * @see javax.persistence.spi.PersistenceProvider#createEntityManagerFactory
+ *
  */
 @SuppressWarnings("serial")
 public class LocalEntityManagerFactoryBean extends AbstractEntityManagerFactoryBean {

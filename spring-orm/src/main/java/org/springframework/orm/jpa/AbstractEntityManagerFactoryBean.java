@@ -86,6 +86,17 @@ import org.springframework.util.CollectionUtils;
  * @since 2.0
  * @see LocalEntityManagerFactoryBean
  * @see LocalContainerEntityManagerFactoryBean
+ *
+ *
+抽象FactoryBean，它在Spring应用程序上下文中创建一个本地JPA EntityManagerFactory实例。
+在不同的JPA引导契约(独立的和容器的)之间封装通用功能。
+实现对标准JPA配置约定的支持，以及Spring的可定制JpaVendorAdapter机制，并控制EntityManagerFactory的生命周期。
+这个类还实现了PersistenceExceptionTranslator接口，由Spring的org.springframework.dao.annotation自动检测。
+PersistenceExceptionTranslationPostProcessor，用于基于aop的将本地异常转换为Spring DataAccessExceptions。
+因此，LocalEntityManagerFactoryBean的存在会自动启用一个PersistenceExceptionTranslationPostProcessor来转换JPA异常。
+ *
+ *
+ *
  */
 @SuppressWarnings("serial")
 public abstract class AbstractEntityManagerFactoryBean implements
