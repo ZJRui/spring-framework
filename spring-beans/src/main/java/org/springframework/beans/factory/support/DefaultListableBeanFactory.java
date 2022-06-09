@@ -155,6 +155,63 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	/** Resolver to use for checking if a bean definition is an autowire candidate. */
 	private AutowireCandidateResolver autowireCandidateResolver = new SimpleAutowireCandidateResolver();
 
+	/**
+	 * 有个问题： 我们知道如果是注入ApplicationContext 那么你需要实现ApplicationContextAware接口。
+	 * 但是我发现 在某些测试类中 可以直接 不用实现任何接口 直接 @Autowired ApplicationContext applicationContext。
+	 *
+	 * 那么我就好奇：
+	 * （1）虽然是在测试类中看到的直接注入， 那么普通的Service方法中可以不实现接口直接注入 ApplicationContext吗？是的，普通Service也可以直接@Autowired
+	 *
+	 * （2）为什么可以直接注入？ 容器中有 ApplicationContext类型的bean吗？  你可以通过 applicationContext.getBean(ApplicationContext)
+	 * 来测试一下容器中是否有ApplicationContext类型的ban
+	 *
+	 * 实际上 如果你直接 用applicationContext.getBean(ApplicationContext.class) 会报错提示：Nosuchbean。
+	 * 那么就非常好奇，既然容器中没有这样的Bean，那么为什么测试类中  能够 直接 @Autowired  ApplicationContext？
+	 *
+	 * 实际上在 下面的这个 resolvableDependencies属性中就会缓存 一些 类型的对象，比如
+	 * 1。{Class@2149} "interface org.springframework.core.io.ResourceLoader" ->
+	 * {GenericWebApplicationContext@6206} "org.springframework.web.context.support.GenericWebApplicationContext@487db668, started on Thu Jun 09 19:54:39 CST 2022"
+	 *
+	 * 2。{Class@4928} "interface org.springframework.web.context.request.WebRequest" ->
+	 * {WebApplicationContextUtils$WebRequestObjectFactory@6295} "Current ServletWebRequest"
+	 *
+	 * 3，{Class@4912} "interface javax.servlet.ServletRequest" -> {WebApplicationContextUtils$RequestObjectFactory@6296} "Current HttpServletRequest"
+	 *
+	 * 4，{Class@5747} "interface javax.servlet.http.HttpSession" -> {WebApplicationContextUtils$SessionObjectFactory@6297} "Current HttpSession"
+	 *
+	 * 5，{Class@4919} "interface javax.servlet.ServletResponse" -> {WebApplicationContextUtils$ResponseObjectFactory@6301} "Current HttpServletResponse"
+	 *
+	 * 6，{Class@3236} "interface org.springframework.beans.factory.BeanFactory" ->
+	 * {DefaultListableBeanFactory@6085} "org.springframework.beans.factory.support.DefaultListableBeanFactory@5c18016b:
+	 * defining beans [org.springframework.context.annotation.internalConfigurationAnnotationProcessor,org.springframework.context.annotation.internalAutowiredAnnotationProcessor,org.springframework.context.annotation.internalCommonAnnotationProcessor,org.springframework.context.event.internalEventListenerProcessor,org.springframework.context.event.internalEventListenerFactory,org.springframework.boot.test.context.ImportsContextCustomizer$ImportsCleanupPostProcessor,org.springframework.boot.test.mock.mockito.MockitoPostProcessor$SpyPostProcessor,org.springframework.boot.test.mock.mockito.MockitoPostProcessor,demoApplication,org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory,testService,testConfig.StaticNestedTestConfig,testConfig,coffeeRepository,coffeeService,studentService,org.springframework.boot.autoconfigure.AutoConfigurationPackages,bankServiceTwo,com.example.demo.config.TestConfig$Ne"
+	 *
+	 * 7，{Class@3242} "interface org.springframework.context.ApplicationContext" ->
+	 * {GenericWebApplicationContext@6206} "org.springframework.web.context.support.GenericWebApplicationContext@487db668, started on Thu Jun 09 19:54:39 CST 2022"
+	 *
+	 *
+	 * 当你@Autowired这些类型的bean的时候 ， 会在 AutowiredAnnotationBeanPostProcessor 注解处理器中做解析 通过下面的方法获取候选对象
+	 * org.springframework.beans.factory.support.DefaultListableBeanFactory#findAutowireCandidates(java.lang.String, java.lang.Class, org.springframework.beans.factory.config.DependencyDescriptor)
+	 *
+	 *
+	 * 从这里我们要注意： @Autowired 进行find候选的时候会使用这个resolvableDependencies ，但是getbean的时候并没有查找这个Map。
+	 * 为什么呢？ 因为resolvableDependencies 不具有通用性，比如@Controller中注入一个ServletHttpRequest，
+	 * 我们知道理论上每次请求 ServletHttpRequest都是不同的请求对象，正常情况下应该无法注入  但是通过resolvableDependencies 就可以注入，
+	 * 实际注入的是一个WebApplicationContextUtils$RequestObjectFactory 对象，当你使用HttpServletRequest的时候 RequestObjectFactory
+	 * 会从当前线程的ThreadLocal中获取 请求对象。
+	 *
+	 *
+	 * 那么问题是 ： Application类型的bean什么时候被放入的呢？
+	 *  在容器refresh的时候 会执行 org.springframework.context.support.AbstractApplicationContext#prepareBeanFactory(org.springframework.beans.factory.config.ConfigurableListableBeanFactory)
+	 *  prepareBeanFactory 中会执行
+	 *  beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
+	 *  beanFactory.registerResolvableDependency(ResourceLoader.class, this);
+	 * 	beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
+	 * 	beanFactory.registerResolvableDependency(ApplicationContext.class, this);
+	 * 	从而在容器中预先注册一些类型的Bean
+	 *
+	 *
+	 */
+
 	/** Map from dependency type to corresponding autowired value. */
 	private final Map<Class<?>, Object> resolvableDependencies = new ConcurrentHashMap<>(16);
 
