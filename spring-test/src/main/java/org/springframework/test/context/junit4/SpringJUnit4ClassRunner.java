@@ -140,6 +140,25 @@ public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 	 */
 	public SpringJUnit4ClassRunner(Class<?> clazz) throws InitializationError {
 		super(clazz);
+
+		/***
+		 *
+		 * 同一个@RunWith标记的测试类中的每一个测试方法 都会创建一个 测试类对象，但是他们都是使用相同的Spring容器。 这其中的原因是：
+		 * （1）@RunWith标记的测试类，会根据@RunWith注解中指定的Runner 和测试类 构建一个TestContext, TestContext 是所有的@Test方法共享的，所以每一个测试方法都会使用同一个spring容器。
+		 *
+		 * （2）每一个Test方法 都会被Junit重新封装成一个Statement，这个Statement的evaluate方法会首先创建测试类对象，因此每个测试方法执行的时候
+		 * 都会创建一个测试类对象。
+		 *
+		 * （3）测试类对象创建完成之后 会执行一些listener之类的回调， 并对测试类对象进行依赖注入，依赖注入之前会先通过TestContext 获取Spring容器，如果发先容器没有创建，则会触发容器的创建。
+		 *
+		 * （4）容器创建是 加载的配置类和配置文件 是在TestContext中管理的 被merge成了一个configuration。
+		 *
+		 *
+		 *
+		 */
+
+
+
 		/**
 		 *
 		 * SpringJunit4ClassRunner 创建 TestContextManager。
@@ -533,6 +552,22 @@ public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 		} else {
 			Statement statement;
 			try {
+
+				/**
+				 *对测试类 方法对封装  ，封装成Statement
+				 *
+				 *
+				 *同一个@RunWith标记的测试类中的每一个测试方法 都会创建一个 测试类对象，但是他们都是使用相同的Spring容器。 这其中的原因是：
+				 * （1）@RunWith标记的测试类，会根据@RunWith注解中指定的Runner 和测试类 构建一个TestContext, TestContext 是所有的@Test方法共享的，所以每一个测试方法都会使用同一个spring容器。
+				 *
+				 * （2）每一个Test方法 都会被Junit重新封装成一个Statement，这个Statement的evaluate方法会首先创建测试类对象，因此每个测试方法执行的时候
+				 * 都会创建一个测试类对象。
+				 *
+				 * （3）测试类对象创建完成之后 会执行一些listener之类的回调， 并对测试类对象进行依赖注入，依赖注入之前会先通过TestContext 获取Spring容器，如果发先容器没有创建，则会触发容器的创建。
+				 *
+				 * （4）容器创建是 加载的配置类和配置文件 是在TestContext中管理的 被merge成了一个configuration。
+				 *
+				 */
 				statement = methodBlock(frameworkMethod);
 			} catch (Throwable ex) {
 				statement = new Fail(ex);
@@ -667,6 +702,7 @@ public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 		 */
 		Object testInstance;
 		try {
+			//创建测试类对象
 			testInstance = new ReflectiveCallable() {
 				@Override
 				protected Object runReflectiveCall() throws Throwable {

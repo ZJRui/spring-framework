@@ -60,10 +60,25 @@ import org.springframework.web.context.request.ServletWebRequest;
  * class} is not annotated with {@link WebAppConfiguration @WebAppConfiguration}.
  * See the javadocs for individual methods in this class for details.
  *
+ *
+ * TestExecutionListener为Spring TestContext框架加载的
+ * WebApplicationContexts提供了模拟Servlet API支持。
+ *
+ * 具体来说，ServletTestExecutionListener在测试实例准备期间和每个测试方法之前
+ * 通过Spring Web的RequestContextHolder设置线程本地状态，
+ * 并基于WebApplicationContext中呈现的MockServletContext创建一个
+ * MockHttpServletRequest、MockHttpServletResponse和ServletWebRequest。
+ * 这个监听器还确保可以将MockHttpServletResponse和ServletWebRequest注入到测试
+ * 实例中，一旦测试完成，这个监听器就会清除线程本地状态。
+ *
+ * 注意ServletTestExecutionListener在默认情况下是启用的，
+ * 但是如果测试类没有使用@WebAppConfiguration注释，
+ * 通常不会采取任何操作。有关这个类中的各个方法的详细信息，请参阅javadoc。
  * @author Sam Brannen
  * @author Phillip Webb
  * @since 3.2
  */
+@SuppressWarnings("AlibabaRemoveCommentedCode")
 public class ServletTestExecutionListener extends AbstractTestExecutionListener {
 
 	/**
@@ -129,6 +144,40 @@ public class ServletTestExecutionListener extends AbstractTestExecutionListener 
 	 */
 	@Override
 	public void prepareTestInstance(TestContext testContext) throws Exception {
+		/**
+		 * 在测试实例准备回调阶段，通过Spring Web的RequestContextHolder设置线程本地状态，
+		 * 但前提是测试类使用@WebAppConfiguration注释。
+		 *
+		 * 问题： 测试类的实例是什么时候创建的？
+		 * 在测试框架 org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor#prepare(org.junit.jupiter.engine.execution.JupiterEngineExecutionContext)
+		 * 方法中会通过 下面的方式创建 测试实例对象
+		 * TestInstances testInstances = context.getTestInstancesProvider().getTestInstances(registry,
+		 * 				throwableCollector);
+		 *
+		 * TestInstances instances = instantiateTestClass(parentExecutionContext, registry, registrar, extensionContext,
+		 * 			throwableCollector);
+		 *
+		 * 	在创建实例之后会执行实例的 TestInstancePostProcessor
+		 * 	invokeTestInstancePostProcessors(instances.getInnermostInstance(), registry, extensionContext);
+		 *
+		 * 其中有一个 特殊的TestInstancePostProcessor 就是SpringExtension
+		 *
+		 * SpringExtension的回调方法postProcessTestInstance  会执行 prepareTestInstance
+		 * getTestContextManager(context).prepareTestInstance(testInstance);
+		 *
+		 * 在prepareTestInstance的过程中会执行 所有的 TestExecutionListener
+		 *
+		 *其中有两个重要的 TestExecutionListener
+		 * （1）DependencyInjectionTestExecutionListener
+		 * （2）这里的ServletTestExecutionListener
+		 * 在listener中一般都会根据方法中接收到的 TestContext，主动获取TestContext中的Applicationcontext
+		 * prepareTestInstance(TestContext testContext)
+		 *
+		 * ApplicationContext context = testContext.getApplicationContext();
+		 *
+		 * testContext中如果ApplicationContext还没有 创建，那么就会触发 loadContext 创建Spring容器
+		 *
+		 */
 		setUpRequestContextIfNecessary(testContext);
 	}
 
