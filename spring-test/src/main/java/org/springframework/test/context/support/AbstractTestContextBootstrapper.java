@@ -287,9 +287,28 @@ public abstract class AbstractTestContextBootstrapper implements TestContextBoot
 	@SuppressWarnings("unchecked")
 	@Override
 	public final MergedContextConfiguration buildMergedContextConfiguration() {
+		/**
+		 * 在与这个引导程序关联的BootstrapContext中为测试类构建合并的上下文配置。
+		 * 在构建合并配置时，实现必须考虑以下因素:
+		 * 1.上下文层次结构通过@ContextHierarchy和@ContextConfiguration声明
+		 * 2.通过@ActiveProfiles声明的活动bean定义配置文件
+		 * 3.上下文初始化器通过contextconfiguration .initializer声明:Context initializers declared via ContextConfiguration.initializers
+		 * 4.测试属性源声明通过@TestPropertySource
+		 *
+		 * 有关所需语义的详细信息，请参考Javadoc中的上述注释。
+		 * 注意，在构造TestContext时，buildTestContext()的实现通常应该委托给这个方法。
+		 * 当决定为给定的测试类使用哪个ContextLoader时，应该使用以下算法:
+		 * 如果一个ContextLoader类已经通过ContextConfiguration显式声明。装载机,使用它。
+		 * 否则，具体实现可以自由决定使用哪个ContextLoader类作为默认值。
+		 *
+		 */
 		Class<?> testClass = getBootstrapContext().getTestClass();
 		CacheAwareContextLoaderDelegate cacheAwareContextLoaderDelegate = getCacheAwareContextLoaderDelegate();
 
+		/**
+		 *
+		 * 确定测试类上的ContextConfiguration 和ContextHierarchy
+		 */
 		if (MetaAnnotationUtils.findAnnotationDescriptorForTypes(
 				testClass, ContextConfiguration.class, ContextHierarchy.class) == null) {
 			return buildDefaultMergedContextConfiguration(testClass, cacheAwareContextLoaderDelegate);
@@ -372,6 +391,18 @@ public abstract class AbstractTestContextBootstrapper implements TestContextBoot
 			List<ContextConfigurationAttributes> configAttributesList, @Nullable MergedContextConfiguration parentConfig,
 			CacheAwareContextLoaderDelegate cacheAwareContextLoaderDelegate,
 			boolean requireLocationsClassesOrInitializers) {
+		/**
+		 *
+		 * 为提供的testClass、上下文配置属性和父上下文配置构建合并的上下文配置。
+		 * 参数:
+		 * configAttributesList -指定测试类的上下文配置属性列表，顺序自底向上(即，好像我们在遍历类层次结构);
+		 * 永远不要为null或空的parentConfig——上下文层次结构中父应用程序上下文的合并上下文配置，
+		 * 如果没有父cacheAwareContextLoaderDelegate——缓存感知上下文加载器委托将被传递给MergedContextConfiguration
+		 * 构造函数requirelocationsclassesorinitializer——无论位置、类或初始化器是否需要;通常为true，
+		 * 但如果配置的加载器支持空配置，也可以设置为false
+		 * 返回:
+		 * 合并的上下文配置
+		 */
 
 		Assert.notEmpty(configAttributesList, "ContextConfigurationAttributes list must not be null or empty");
 

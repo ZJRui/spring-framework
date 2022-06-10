@@ -39,6 +39,7 @@ import org.springframework.util.ClassUtils;
  * @see BootstrapContext
  * @see TestContextBootstrapper
  */
+@SuppressWarnings("AlibabaRemoveCommentedCode")
 abstract class BootstrapUtils {
 
 	private static final String DEFAULT_BOOTSTRAP_CONTEXT_CLASS_NAME =
@@ -186,10 +187,50 @@ abstract class BootstrapUtils {
 
 	@Nullable
 	private static Class<?> resolveExplicitTestContextBootstrapper(Class<?> testClass) {
+		/**
+		 *
+		 *classes:-1, $Proxy7 (com.sun.proxy)---------》提取@Bootstrap注解中的value参数
+		 * invoke0:-1, NativeMethodAccessorImpl (sun.reflect)
+		 * invoke:62, NativeMethodAccessorImpl (sun.reflect)
+		 * invoke:43, DelegatingMethodAccessorImpl (sun.reflect)
+		 * invoke:498, Method (java.lang.reflect)
+		 * isValid:112, AttributeMethods (org.springframework.core.annotation)
+		 * getDeclaredAnnotations:460, AnnotationsScanner (org.springframework.core.annotation)------------》寻找@BootstrapWith注解
+		 * isKnownEmpty:492, AnnotationsScanner (org.springframework.core.annotation)
+		 * from:251, TypeMappedAnnotations (org.springframework.core.annotation)
+		 * from:351, MergedAnnotations (org.springframework.core.annotation)
+		 * from:330, MergedAnnotations (org.springframework.core.annotation)
+		 * from:313, MergedAnnotations (org.springframework.core.annotation)
+		 * from:300, MergedAnnotations (org.springframework.core.annotation)
+		 * isAnnotationDeclaredLocally:675, AnnotationUtils (org.springframework.core.annotation)
+		 * findAnnotationDescriptor:240, TestContextAnnotationUtils (org.springframework.test.context)
+		 * findAnnotationDescriptor:214, TestContextAnnotationUtils (org.springframework.test.context)
+		 * resolveExplicitTestContextBootstrapper:165, BootstrapUtils (org.springframework.test.context)
+		 * resolveTestContextBootstrapper:138, BootstrapUtils (org.springframework.test.context)
+		 * <init>:122, TestContextManager (org.springframework.test.context)------------->TestContextManager创建
+		 *
+		 *
+		 * TestContextManager创建的时候户i执行如下内容， resolveTestContextBootstrapper 会触发 解析测试类上的@BootstrapWith注解 从而提取这个注解中的value参数
+		 * 		this(BootstrapUtils.resolveTestContextBootstrapper(BootstrapUtils.createBootstrapContext(testClass)));
+		 *
+		 * 	对于SpringBoot测试类而言，他使用@SpringBootTest注解标注，这个@SpringBootTest 默认聚合了@BootstrapWith(SpringBootTestContextBootstrapper.class)
+		 *
+		 * 	因此他会创建SpringbootTestContextbootstrapper对象，然后 这个对象会负责解析SpringBootTest注解本身的内容。
+		 *
+		 * 	也就是说@SpringBootTest注解本身有两部分内容（1）聚合了Spring的注解（SpringBootTestContextBootstrapper），通过这个Sprig的注解告诉 spring 你可以
+		 * 	我这个注解指定的springboot的类来完成某项工作 （2）SpringBoot框架自己的@SpringBootTest注解自身的 内容，比如@SpringBootTest注解内可以配置classes 、exclude等
+		 * 	信息，Spring本身不会解析@SpringBootTest，因为这个是SpringBoot的注解， 但是SpringBoot可以通过Spring的注解告诉spring 使用springboot的SpringbootTestContextbootstrapper
+		 * 	来解析@SPringBootTest
+		 *
+		 *
+		 *
+		 *
+		 */
 		Set<BootstrapWith> annotations = AnnotatedElementUtils.findAllMergedAnnotations(testClass, BootstrapWith.class);
 		if (annotations.isEmpty()) {
 			return null;
 		}
+
 		if (annotations.size() == 1) {
 			return annotations.iterator().next().value();
 		}

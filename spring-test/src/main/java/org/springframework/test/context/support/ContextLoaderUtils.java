@@ -235,6 +235,12 @@ abstract class ContextLoaderUtils {
 	 * {@code @ContextConfiguration} is not <em>present</em> on the supplied class
 	 */
 	static List<ContextConfigurationAttributes> resolveContextConfigurationAttributes(Class<?> testClass) {
+		/**
+		 * 解析所提供的测试类及其超类的上下文配置属性列表。
+		 * 注意，@ContextConfiguration的inheritLocations和inheritinitializer标志将不会被考虑。
+		 *
+		 * 如果需要遵守这些标志，则必须在遍历此方法返回的列表时手动处理。
+		 */
 		Assert.notNull(testClass, "Class must not be null");
 
 		List<ContextConfigurationAttributes> attributesList = new ArrayList<>();

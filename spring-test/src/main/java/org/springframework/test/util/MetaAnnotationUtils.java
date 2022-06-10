@@ -171,6 +171,19 @@ public abstract class MetaAnnotationUtils {
 	@Nullable
 	public static UntypedAnnotationDescriptor findAnnotationDescriptorForTypes(
 			Class<?> clazz, Class<? extends Annotation>... annotationTypes) {
+		/**
+		 *找到MetaAnnotationUtils。指定clazz(包括指定clazz本身)的继承层次结构中的第一个类的UntypedAnnotationDescriptor，
+		 * 它声明了至少一个指定的注释类型。
+		 * 如果在给定的类本身上找不到注释，则此方法将遍历指定clazz的注释、接口和超类。
+		 * 这个方法显式地处理没有声明为继承的类级别注释和元注释。
+		 * 算法操作如下:
+		 * 在给定的类上搜索注释类型之一的本地声明，如果找到的话返回相应的UntypedAnnotationDescriptor。
+		 * 递归搜索给定类声明的所有注释。
+		 * 递归搜索给定类实现的所有接口。
+		 * 递归搜索给定类的超类层次结构。
+		 * 在这个上下文中，术语递归意味着搜索过程继续进行，返回步骤#1，使用当前注释、接口或超类作为在其上查找注释的类。
+		 *
+		 */
 
 		return findAnnotationDescriptorForTypes(clazz, new HashSet<>(), annotationTypes);
 	}
