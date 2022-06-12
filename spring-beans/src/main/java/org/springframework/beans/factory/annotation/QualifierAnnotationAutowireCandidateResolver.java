@@ -45,9 +45,16 @@ import org.springframework.util.StringUtils;
 /**
  * {@link AutowireCandidateResolver} implementation that matches bean definition qualifiers
  * against {@link Qualifier qualifier annotations} on the field or parameter to be autowired.
+ *
+ *
+ *
+ *
  * Also supports suggested expression values through a {@link Value value} annotation.
  *
  * <p>Also supports JSR-330's {@link javax.inject.Qualifier} annotation, if available.
+ *
+ * AutowireCandidateResolver实现，它将bean定义限定符与要自动连接的字段或参数上的限定符注释相匹配。还通过值注释支持建议的表达式值。
+ * 如果可用的话，还支持JSR-330的javax.inject.Qualifier注释。
  *
  * @author Mark Fisher
  * @author Juergen Hoeller
@@ -73,6 +80,7 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 	public QualifierAnnotationAutowireCandidateResolver() {
 		this.qualifierTypes.add(Qualifier.class);
 		try {
+			//对jsr330注解的支持
 			this.qualifierTypes.add((Class<? extends Annotation>) ClassUtils.forName("javax.inject.Qualifier",
 							QualifierAnnotationAutowireCandidateResolver.class.getClassLoader()));
 		}

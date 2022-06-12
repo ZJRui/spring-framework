@@ -1115,6 +1115,7 @@ public class AutowiredAnnotationBeanPostProcessorTests {
 
 	@Test
 	public void testObjectFactoryQualifierInjection() {
+
 		bf.registerBeanDefinition("annotatedBean", new RootBeanDefinition(ObjectFactoryQualifierInjectionBean.class));
 		RootBeanDefinition bd = new RootBeanDefinition(TestBean.class);
 		bd.addQualifier(new AutowireCandidateQualifier(Qualifier.class, "testBean"));

@@ -24,6 +24,8 @@ import org.springframework.util.Assert;
  * includes one or more such qualifiers enables fine-grained matching
  * against annotations on a field or parameter to be autowired.
  *
+ * 限定符，用于解析自动装配候选项。包含一个或多个这样的限定符的bean定义允许对字段或参数上的注释进行细粒度的自动匹配。
+ *
  * @author Mark Fisher
  * @author Juergen Hoeller
  * @since 2.5
@@ -43,6 +45,9 @@ public class AutowireCandidateQualifier extends BeanMetadataAttributeAccessor {
 	/**
 	 * Construct a qualifier to match against an annotation of the
 	 * given type.
+	 *
+	 * 构造一个限定符来匹配给定类型的注释。
+	 *
 	 * @param type the annotation type
 	 */
 	public AutowireCandidateQualifier(Class<?> type) {

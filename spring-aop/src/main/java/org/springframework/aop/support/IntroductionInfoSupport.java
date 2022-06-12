@@ -88,6 +88,9 @@ public class IntroductionInfoSupport implements IntroductionInfo, Serializable {
 
 	/**
 	 * Is this method on an introduced interface?
+	 *
+	 * 这个方法是在引入的接口上吗?
+	 *
 	 * @param mi the method invocation
 	 * @return whether the invoked method is on an introduced interface
 	 */

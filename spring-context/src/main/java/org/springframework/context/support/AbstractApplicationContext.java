@@ -551,11 +551,78 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				 */
 				postProcessBeanFactory(beanFactory);
 
-				// Invoke factory processors registered as beans in the context.
+
+
 				/**
-				 * 激活各种BeanFactory处理器
+				 *
+				 * postProcessBeanFactory:47, WebTargetInjectionProcessor (com.ebay.jaxrs.client.spring)
+				 * invokeBeanFactoryPostProcessors:325, PostProcessorRegistrationDelegate (org.springframework.context.support)
+				 * invokeBeanFactoryPostProcessors:198, PostProcessorRegistrationDelegate (org.springframework.context.support)
+				 * invokeBeanFactoryPostProcessors:746, AbstractApplicationContext (org.springframework.context.support)
+				 * refresh:564, AbstractApplicationContext (org.springframework.context.support)
+				 * refresh:740, SpringApplication (org.springframework.boot)
+				 * refreshContext:415, SpringApplication (org.springframework.boot)
+				 * run:303, SpringApplication (org.springframework.boot)
+				 * loadContext:136, SpringBootContextLoader (org.springframework.boot.test.context)
+				 * loadContextInternal:99, DefaultCacheAwareContextLoaderDelegate (org.springframework.test.context.cache)
+				 * loadContext:124, DefaultCacheAwareContextLoaderDelegate (org.springframework.test.context.cache)
+				 * getApplicationContext:124, DefaultTestContext (org.springframework.test.context.support)
+				 *
+				 *
+				 * 1， 在refres的过程中会执行 invokeBeanFactoryPostProcessors  来执行容器中已经注册了的容器后置处理器bean，beanFactoryPostProcessors
+				 * 	// Invoke factory processors registered as beans in the context.
+				 * 	 invokeBeanFactoryPostProcessors(beanFactory);
+				 *
+				 * 	 那么问题： 对于一个容器后置处理器 我们如何告知spring， 告知的方式是告诉容器 beanFactoryClasse 么？
+				 * 	 容器后置处理器通过Spring ioc容器来创建的吗？在哪里什么时候创建？  也就是说 容器后置处理器Bean 是通过Spring的refres创建的么？ 还是说
+				 * 	 在容器refres之前就已经手动 创建好了Bean对象，然后添加到了Spring容器中。 这种情况下这些容器后置处理器bean应该是不会归Spring 容器管理的。
+				 *
+				 *
+				 *
+				 * Sprig 容器中有两种 BeanfactoryProcessor
+				 *   （1）GenericWebApplicationContext的父类AbstractApplicationContext中有一个 List<BeanFactoryPostProcessor> beanFactoryPostProcessors 属性来存放 容器后置处理器
+				 *   在 SpringBoot 提供了  class SharedMetadataReaderFactoryContextInitializer  implements ApplicationContextInitializer<ConfigurableApplicationContext>,
+				 *   SharedMetadataReaderFactoryContextInitializer  这个类是一个ApplicationContextInitializer  ，ApplicationContextInitializer 这个类不归Spring 容器管理
+				 *
+				 *   spring容器不会创建ApplicatioContextInitializer对象， 这个Initializer对象的创建是在SpringIoc容器之前。 在springboot中
+				 *   SpringApplication#run --》SpringApplication#prepareContext--》Spring Application#applyInitializers  然后从spring.factories文件中
+				 *   解析出来有 哪些 ApplicationContextInitializer
+				 *
+				 *   SharedMetadataReaderFactoryContextInitializer的回调方法intialize方法中  会添加 一个BeanPostFactory到容器的list中。也就是说有些容器后置处理器是手动添加进去的
+				 *   @Override
+				 *        public void initialize(ConfigurableApplicationContext applicationContext) {
+				 * 		BeanFactoryPostProcessor postProcessor = new CachingMetadataReaderFactoryPostProcessor(applicationContext);
+				 * 		applicationContext.addBeanFactoryPostProcessor(postProcessor);
+				 *    }
+				 *
+				 * （2）第二中情况就是  在invokeBeanFactoryPostProcessors的过程中会执行 下面的方法
+				 * org.springframework.context.support.PostProcessorRegistrationDelegate#invokeBeanFactoryPostProcessors(org.springframework.beans.factory.config.ConfigurableListableBeanFactory, java.util.List)
+				 * 在这个方法中 通过 在容器中获取 BeanFactoryPostProcessor类型的bean  ，也就会触发 spring容器中 注册的 容器后置处理器BeanDefinition 创建后置处理器对象
+				 *
+				 * String[] postProcessorNames =
+				 * 				beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
+				 *
+				 *
+				 * 因此通过以上两部就得到了所有的 容器后置处理器。 显然从这里我们可以看到， 对于一个自定义的容器后置 处理器，要想生效，那么你需要使用@Component注解将其注册到spring ioc容器中
+				 * 在 refres的时候 会有限公司 实例化 容器后置处理器bean。 对于容器后置处理器， 很多处理器的实现都是往spring容器中注册beanDefinition
+				 *
+				 *
+				 * 关于 ApplicationContextIntializer
+				 *  ApplicationContextInitializer是Spring框架原有的东西，这个类的主要作用就是在ConfigurableApplicationContext类型(或者子类型)的ApplicationContext做refresh之前，
+				 *  允许我们对ConfiurableApplicationContext的实例做进一步的设置和处理。ApplicationContextInitializer接口是在spring容器刷新之前执行的一个回调函数。
+				 *  是在ConfigurableApplicationContext#refresh() 之前调用（当spring框架内部执行 ConfigurableApplicationContext#refresh() 方法的时候或者在SpringBoot的run()
+				 *  执行时），作用是初始化Spring ConfigurableApplicationContext的回调接口。
+				 *  https://www.cnblogs.com/duanxz/p/11239291.html
+				 *
+				 *  在一个Springboot应用中，classpath上会包含很多jar包，有些jar包需要在ConfigurableApplicationContext#refresh()调用之前对应用上下文做一些初始化动作，因此它们会提供自己的ApplicationContextInitializer实现类，然后放在自己的META-INF/spring.factories属性文件中，
+				 *  这样相应的ApplicationContextInitializer实现类就会被SpringApplication#initialize发现：
+				 *
+				 *
+				 *
+				 *
 				 *
 				 */
+				// Invoke factory processors registered as beans in the context.
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.

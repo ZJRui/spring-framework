@@ -187,6 +187,9 @@ public class ConstructorArgumentValues {
 	 * Add a generic argument value to be matched by type.
 	 * <p>Note: A single generic argument value will just be used once,
 	 * rather than matched multiple times.
+	 *
+	 * 添加一个按类型匹配的泛型参数值。
+	 * 注意:一个泛型参数值只会被使用一次，而不是多次匹配。
 	 * @param value the argument value
 	 */
 	public void addGenericArgumentValue(Object value) {

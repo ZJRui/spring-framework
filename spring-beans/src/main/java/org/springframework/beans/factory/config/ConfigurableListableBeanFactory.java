@@ -84,6 +84,13 @@ public interface ConfigurableListableBeanFactory
 	 * Determine whether the specified bean qualifies as an autowire candidate,
 	 * to be injected into other beans which declare a dependency of matching type.
 	 * <p>This method checks ancestor factories as well.
+	 *
+	 *确定指定的bean是否符合自动装配候选者的条件，将其注入到声明了匹配类型依赖项的其他bean中。
+	 * 这个方法也会检查祖先工厂。
+	 *
+	 * 就是说根据当前的 依赖描述符，来检查 指定的beanName是否符合 依赖描述所描述的bean
+	 *
+	 *
 	 * @param beanName the name of the bean to check
 	 * @param descriptor the descriptor of the dependency to resolve
 	 * @return whether the bean should be considered as autowire candidate

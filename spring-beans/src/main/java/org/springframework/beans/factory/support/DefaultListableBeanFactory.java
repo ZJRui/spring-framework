@@ -770,13 +770,26 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	@Override
 	public boolean isAutowireCandidate(String beanName, DependencyDescriptor descriptor)
 			throws NoSuchBeanDefinitionException {
-
+		/**
+		 *
+		 *确定指定的bean是否符合自动装配候选者的条件，将其注入到声明了匹配类型依赖项的其他bean中。
+		 * 这个方法也会检查祖先工厂。
+		 *
+		 * 就是说根据当前的 依赖描述符，来检查 指定的beanName是否符合 依赖描述所描述的bean
+		 *
+		 * getAutowiredCandidateResolver 返回ContextAnnotationAutowireCandidateResolver
+		 *
+		 */
 		return isAutowireCandidate(beanName, descriptor, getAutowireCandidateResolver());
 	}
 
 	/**
 	 * Determine whether the specified bean definition qualifies as an autowire candidate,
 	 * to be injected into other beans which declare a dependency of matching type.
+	 *
+	 *
+	 *确定指定的bean定义是否符合自动装配候选者的条件，将其注入到声明匹配类型依赖项的其他bean中。
+	 *
 	 * @param beanName the name of the bean definition to check
 	 * @param descriptor the descriptor of the dependency to resolve
 	 * @param resolver the AutowireCandidateResolver to use for the actual resolution algorithm
@@ -1496,6 +1509,40 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	protected Map<String, Object> findAutowireCandidates(
 			@Nullable String beanName, Class<?> requiredType, DependencyDescriptor descriptor) {
 
+		/**
+		 * 一个创建好的bean 在populate属性的时候，根据之前解析的 这个类中有哪些Field需要依赖注入的Field， 这些Field可以是
+		 * @Inject 注解的注入，也可以是@Autowired的注入，比如下面这 两个
+		 *
+		 *     @Inject
+		 *     @Named("fidelius.vault")
+		 *     private WebTarget webTarget;//jerseywebtarget
+		 *     @Autowired
+		 *     private TfTokenClient tfTokenClient
+		 *
+		 *
+		 *  这个过程 是发生在 容器后置处理器： org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor#postProcessProperties(org.springframework.beans.PropertyValues, java.lang.Object, java.lang.String)
+		 *
+		 *  在这个容器后置处理器中，首先 找出这个bean中有哪些属性需要依赖注入，
+		 *  InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
+		 *
+		 *  InjectionMetadata对象的injectedElements 属性 会记录 需要依赖注入的Field
+		 *  private final Collection<InjectedElement> injectedElements;
+		 *
+		 * 然后根据当前的Field 创建一个 Descriptor DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
+		 *
+		 * 在容器中寻找候选的bean.  下面的beanNamesForTypeIncludingAncestors 方法就是从容器中找出 和Field类型相同的Bean的Name
+		 *
+		 * 需要注意的是 同一个类型的bean 可能会有多个不同名称的实例。 比如我们寻找 webTarget这个类型的bean 得到的candidateNames 就是
+		 * （1）scopedTarget.authZSvc.qualyHeaderClient
+		 * （2）authZSvc.qualyHeaderClient
+		 *  (3)fidelius.vault
+		 * （4）scopedTarget.fidelius.vault
+		 * （5）scopedTarget.authZSvc.qualyClient
+		 *
+		 * 然后遍历这些候选的beanName
+		 *
+		 *
+		 */
 		String[] candidateNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 				this, requiredType, true, descriptor.isEager());
 		Map<String, Object> result = new LinkedHashMap<>(candidateNames.length);
@@ -1510,6 +1557,19 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 		}
+		/**
+		 * 遍历每一个BeanName 确定候选bean
+		 *
+		 *这些beanname 所对应的bean对象的类型和 Field的类型相同，但是 如何确定应该使用哪个呢
+		 *		@Inject
+		 *     @Named("fidelius.vault")
+		 *     private WebTarget webTarget;//jerseywebtarget
+		 *
+		 *     这是通过isAutowireCandidate 确定的。
+		 *
+		 *
+		 *
+		 */
 		for (String candidate : candidateNames) {
 			if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, descriptor)) {
 				addCandidateEntry(result, candidate, descriptor, requiredType);

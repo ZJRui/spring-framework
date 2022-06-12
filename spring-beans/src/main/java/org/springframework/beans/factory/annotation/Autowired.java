@@ -27,6 +27,16 @@ import java.lang.annotation.Target;
  * Spring's dependency injection facilities. This is an alternative to the JSR-330
  * {@link javax.inject.Inject} annotation, adding required-vs-optional semantics.
  *
+ * <p>将构造函数、字段、setter方法或配置方法标记为由Spring的依赖注入工具自动连接。这是JSR-330 javax.inject注释的替代方法，添加了required-vs-optional语义。
+ * jsr-330 注解： javax.inject.Named，javax.inject.Inject，javax.inject.Qualifier，javax.inject.Scope，javax.inject.Singleton
+ *
+ * 在QualifierAnnotationAutowireCandidateResolver 的构造器中 你会发现  这个QualifierAnnotationAutowireCandidateResolver 注解解析器增加了对 jsr-330的支持，
+ * 他获取了javax.inject.Qualifier 这个类
+ * <p/>
+ *
+ *
+ *
+ *
  * <p>Only one constructor of any given bean class may declare this annotation with
  * the 'required' attribute set to {@code true}, indicating <i>the</i> constructor
  * to autowire when used as a Spring bean. Furthermore, if the 'required' attribute
@@ -39,13 +49,31 @@ import java.lang.annotation.Target;
  * declares a single constructor to begin with, it will always be used, even if not
  * annotated. An annotated constructor does not have to be public.
  *
+ * <p>
+ *     任何给定bean类只有一个构造函数可以声明这个注释，并将'required'属性设置为true，
+ *     表明当作为Spring bean使用时，构造函数将自动装配。此外，如果'required'属性设置为true，
+ *     则只有一个构造函数可以使用@Autowired进行注释。如果多个非必需的构造函数声明了注释，
+ *     它们将被认为是自动装配的候选者。通过匹配Spring容器中的bean，将选择具有最多依赖项数量的构
+ *     造函数。如果没有一个候选构造函数可以满足要求，那么将使用一个主/默认构造函数(如果存在)。
+ *     如果一个类在开始时只声明了一个构造函数，那么它将始终被使用，即使没有注释。
+ *     带注释的构造函数不必是公共的。
+ * </p>
+ *
  * <p>Fields are injected right after construction of a bean, before any config methods
  * are invoked. Such a config field does not have to be public.
+ * <p>
+ *     字段是在构建bean之后，在调用任何配置方法之前注入的。这样的配置字段不必是公共的。
+ * </p>
  *
  * <p>Config methods may have an arbitrary name and any number of arguments; each of
  * those arguments will be autowired with a matching bean in the Spring container.
  * Bean property setter methods are effectively just a special case of such a general
  * config method. Such config methods do not have to be public.
+ *
+ * <p>
+ *     配置方法可以有任意的名称和任意数量的参数;每个参数都将与Spring容器中的匹配bean自动连接。
+ *     Bean属性setter方法实际上只是这种通用配置方法的一种特殊情况。这样的配置方法不必是公共的。
+ * </p>
  *
  * <p>In the case of a multi-arg constructor or method, the 'required' attribute is
  * applicable to all arguments. Individual parameters may be declared as Java-8-style

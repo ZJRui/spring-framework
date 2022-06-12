@@ -121,9 +121,22 @@ public class QualifierAnnotationAutowireBeanFactoryTests {
 		DefaultListableBeanFactory lbf = new DefaultListableBeanFactory();
 		ConstructorArgumentValues cavs = new ConstructorArgumentValues();
 		cavs.addGenericArgumentValue(JUERGEN);
+
+		/**
+		 * 使用Person 类型的  cavs指定的构造器 构建person 对象，
+		 * 这里的cavs是一个 带有一个参数的构造器
+		 *
+		 */
 		RootBeanDefinition person = new RootBeanDefinition(Person.class, cavs, null);
 		person.addQualifier(new AutowireCandidateQualifier(ClassUtils.getShortName(TestQualifier.class)));
 		lbf.registerBeanDefinition(JUERGEN, person);
+
+
+		/**
+		 * 注意下面 都是使用了 getDeclaredField方法来获取 Field，而不是getField
+		 * getDeclaredFiled 仅能获取类本身的属性成员（包括私有、共有、保护）
+		 * getField 仅能获取类(及其父类可以自己测试) public属性成员
+		 */
 		DependencyDescriptor qualifiedDescriptor = new DependencyDescriptor(
 				QualifiedTestBean.class.getDeclaredField("qualified"), false);
 		DependencyDescriptor nonqualifiedDescriptor = new DependencyDescriptor(
@@ -243,7 +256,11 @@ public class QualifierAnnotationAutowireBeanFactoryTests {
 
 	@Target({ElementType.FIELD, ElementType.PARAMETER})
 	@Retention(RetentionPolicy.RUNTIME)
-	@Qualifier
+	@Qualifier//------------------->核心点，这个TestQualifer注解继承自 @Qualifer
+	/**
+	 * @Qualifer 这个注解使用了 @Inherited注解修饰
+	 * 只有当父类的注解中用@Inherited修饰，子类的getAnnotations()才能获取得到父亲的注解以及自身的注解，而getDeclaredAnnotations()只会获取自身的注解，无论如何都不会获取父亲的注解。
+	 */
 	private static @interface TestQualifier {
 	}
 
