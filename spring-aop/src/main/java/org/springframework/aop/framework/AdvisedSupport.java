@@ -361,7 +361,7 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 		}
 		if (pos > this.advisors.size()) {
 			throw new IllegalArgumentException(
-					"Illegal position " + pos + " in advisor list with size " + this.advisorsAdvisedSupport.size());
+					"Illegal position " + pos + " in advisor list with size " + this.advisors.size());
 		}
 		this.advisors.add(pos, advisor);
 		updateAdvisorArray();

@@ -32,6 +32,15 @@ public class SimpleBeanTargetSource extends AbstractBeanFactoryBasedTargetSource
 
 	@Override
 	public Object getTarget() throws Exception {
+		/**
+		 * 参考org.springframework.aop.scope.ScopedProxyUtils#createScopedProxy(
+		 * org.springframework.beans.factory.config.BeanDefinitionHolder, org.springframework.beans.factory.support.BeanDefinitionRegistry, boolean)
+		 *
+		 * 问题： 为什么  对于一个SimpleBeanTargetSource对象， 每次他的 getTarget方法都要从容器中获取一次呢？
+		 * 毕竟容器中getBean是一个比较费时的操作。 实际上是因为  不同Scope的bean  getBean可能会返回不同的Bean对象，
+		 * 所以必须要每次都从 容器中getBean
+		 *
+		 */
 		return getBeanFactory().getBean(getTargetBeanName());
 	}
 

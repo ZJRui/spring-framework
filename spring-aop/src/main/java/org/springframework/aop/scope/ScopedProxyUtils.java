@@ -36,6 +36,7 @@ import org.springframework.util.Assert;
  * @author Sam Brannen
  * @since 2.5
  */
+@SuppressWarnings("AlibabaRemoveCommentedCode")
 public abstract class ScopedProxyUtils {
 
 	private static final String TARGET_NAME_PREFIX = "scopedTarget.";

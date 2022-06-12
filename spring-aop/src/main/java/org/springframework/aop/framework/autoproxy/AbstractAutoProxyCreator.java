@@ -88,7 +88,7 @@ import org.springframework.util.StringUtils;
  * @see BeanNameAutoProxyCreator
  * @see DefaultAdvisorAutoProxyCreator
  */
-@SuppressWarnings("serial")
+@SuppressWarnings("all")
 public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		implements SmartInstantiationAwareBeanPostProcessor, BeanFactoryAware {
 

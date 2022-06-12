@@ -94,6 +94,17 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 
 
 	/**
+	 *
+	 *
+	 * 值得注意的是  JdkDynamicAopProxy 这个类 不是所有的代理对象共享同一个JdkDynamicAopProxy对象
+	 *
+	 * 而是每一个代理对象都会有一个JdkDynamicAopProxy 对象。
+	 *
+	 * JdkDynamicAopProxy 对象通过 AdvisedSupport 对象持有被代理对象的信息和拦截器信息
+	 *
+	 *
+	 *
+	 *
 	 * Construct a new JdkDynamicAopProxy for the given AOP configuration.
 	 * @param config the AOP configuration as AdvisedSupport object
 	 * @throws AopConfigException if the config is invalid. We try to throw an informative
@@ -118,6 +129,10 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		if (logger.isTraceEnabled()) {
 			logger.trace("Creating JDK dynamic proxy: " + this.advised.getTargetSource());
 		}
+		/**
+		 *
+		 *
+		 */
 		Class<?>[] proxiedInterfaces = AopProxyUtils.completeProxiedInterfaces(this.advised, true);
 		findDefinedEqualsAndHashCodeMethods(proxiedInterfaces);
 		return Proxy.newProxyInstance(classLoader, proxiedInterfaces, this);
@@ -159,6 +174,20 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		Object oldProxy = null;
 		boolean setProxyContext = false;
 
+		/**
+		 * 关于 targetSource 参考 org.springframework.aop.scope.ScopedProxyUtils#createScopedProxy(org.springframework.beans.factory.config.BeanDefinitionHolder, org.springframework.beans.factory.support.BeanDefinitionRegistry, boolean)
+		 *
+		 * 大部分情况下的这个 targetSource是一个SingleTargetSource，比如在wrapIfNecessary中
+		 * org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator#wrapIfNecessary(java.lang.Object, java.lang.String, java.lang.Object)
+		 * 就是创建 SingleTargetSource来包装 targetObject 原始目标对象
+		 *
+		 *
+		 *
+		 *
+		 *
+		 *
+		 *
+		 */
 		TargetSource targetSource = this.advised.targetSource;
 		Object target = null;
 

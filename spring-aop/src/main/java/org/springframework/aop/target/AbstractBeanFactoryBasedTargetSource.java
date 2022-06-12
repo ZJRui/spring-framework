@@ -47,6 +47,7 @@ import org.springframework.util.ObjectUtils;
  * @see ThreadLocalTargetSource
  * @see CommonsPool2TargetSource
  */
+@SuppressWarnings("AlibabaRemoveCommentedCode")
 public abstract class AbstractBeanFactoryBasedTargetSource implements TargetSource, BeanFactoryAware, Serializable {
 
 	/** use serialVersionUID from Spring 1.2.7 for interoperability. */
@@ -121,6 +122,40 @@ public abstract class AbstractBeanFactoryBasedTargetSource implements TargetSour
 
 	@Override
 	public Class<?> getTargetClass() {
+
+
+		/**
+		 *
+		 * 理解这个 getTargetClass参考 org.springframework.aop.scope.ScopedProxyUtils#createScopedProxy(org.springframework.beans.factory.config.BeanDefinitionHolder, org.springframework.beans.factory.support.BeanDefinitionRegistry, boolean)
+		 *
+		 * 在createScopedProxy中我们看到了 会在 ProxyBeanDefinition 中保存一个 targetBeanName
+		 * proxyDefinition.getPropertyValues().add("targetBeanName", targetBeanName);
+		 *
+		 * 这个targetBeanName 就是 scopedTarget.originalBeanName
+		 * 在这里 我们想获取 目标对象的class，
+		 *
+		 *
+		 *
+		 * getTargetClass:133, AbstractBeanFactoryBasedTargetSource (org.springframework.aop.target)
+		 * getTargetClass:156, AdvisedSupport (org.springframework.aop.framework)
+		 * createAopProxy:58, DefaultAopProxyFactory (org.springframework.aop.framework)
+		 * createAopProxy:105, ProxyCreatorSupport (org.springframework.aop.framework)
+		 * getProxy:110, ProxyFactory (org.springframework.aop.framework)
+		 * setBeanFactory:117, ScopedProxyFactoryBean (org.springframework.aop.scope) ----------》 填充Bean对象的Aware属性， 在setBeanFactory的过程中创建  代理对象
+		 * invokeAwareMethods:1826, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * initializeBean:1791, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * doCreateBean:620, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * createBean:542, AbstractAutowireCapableBeanFactory (org.springframework.beans.factory.support)
+		 * lambda$doGetBean$0:335, AbstractBeanFactory (org.springframework.beans.factory.support)
+		 * getObject:-1, 657069980 (org.springframework.beans.factory.support.AbstractBeanFactory$$Lambda$550)
+		 * getSingleton:234, DefaultSingletonBeanRegistry (org.springframework.beans.factory.support)
+		 * doGetBean:333, AbstractBeanFactory (org.springframework.beans.factory.support)
+		 * getBean:208, AbstractBeanFactory (org.springframework.beans.factory.support)-------------》  创建ScopedProxyFactoryBean 对象 之后 对这个对象执行BeanFactoryAware接口
+		 *
+		 *
+		 */
+
+
 		Class<?> targetClass = this.targetClass;
 		if (targetClass != null) {
 			return targetClass;
@@ -129,12 +164,17 @@ public abstract class AbstractBeanFactoryBasedTargetSource implements TargetSour
 			// Full check within synchronization, entering the BeanFactory interaction algorithm only once...
 			targetClass = this.targetClass;
 			if (targetClass == null && this.beanFactory != null) {
+
+				//从容器中 根据beanname获取  类型， 如果获取不到， 则根据beanName获取bean
 				// Determine type of the target bean.
 				targetClass = this.beanFactory.getType(this.targetBeanName);
 				if (targetClass == null) {
 					if (logger.isTraceEnabled()) {
 						logger.trace("Getting bean with name '" + this.targetBeanName + "' for type determination");
 					}
+					/**
+					 * 根据 scopedTarget.originalName 从容器中获取  target对象， 然后 获取器class作为targetClass
+					 */
 					Object beanInstance = this.beanFactory.getBean(this.targetBeanName);
 					targetClass = beanInstance.getClass();
 				}

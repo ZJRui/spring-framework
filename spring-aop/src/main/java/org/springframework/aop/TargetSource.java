@@ -30,10 +30,24 @@ import org.springframework.lang.Nullable;
  * <p>Application developers don't usually need to work with
  * {@code TargetSources} directly: this is an AOP framework interface.
  *
+ * TargetSource用于获取AOP调用的当前“目标”，如果没有around通知选择结束拦截器链本身，
+ * 则将通过反射调用该“目标”。
+ *
+ *
+ *
+ * 如果TargetSource是“静态的”，它将始终返回相同的目标，从而允许在AOP框架中进行优化。
+ * 动态目标源可以支持池化、热交换等。
+ * 应用程序开发人员通常不需要直接使用TargetSources:这是一个AOP框架接口。
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  */
 public interface TargetSource extends TargetClassAware {
+	/**
+	 * 关于TargetSource的应用可以参考
+	 * org.springframework.aop.scope.ScopedProxyUtils#createScopedProxy(org.springframework.beans.factory.config.BeanDefinitionHolder, org.springframework.beans.factory.support.BeanDefinitionRegistry, boolean)
+	 *
+	 */
 
 	/**
 	 * Return the type of targets returned by this {@link TargetSource}.

@@ -30,12 +30,15 @@ import org.springframework.aop.TargetSource;
  * <p>Any AOP proxy obtained from Spring can be cast to this interface to
  * allow manipulation of its AOP advice.
  *
+ * 接口，由保存AOP代理工厂配置的类实现。此配置包括拦截器和其他通知、顾问和代理接口。
+ * 从Spring获得的任何AOP代理都可以被转换到这个接口，从而允许对其AOP通知进行操作。
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 13.03.2003
  * @see org.springframework.aop.framework.AdvisedSupport
  */
-public interface Advised extends TargetClassAware {
+public interface Advised extends TargetClassAware {//advised 建议
 
 	/**
 	 * Return whether the Advised configuration is frozen,
