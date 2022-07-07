@@ -103,6 +103,6 @@ public @interface Async {
 	 * of {@code Async#value} always overrides any value set at the class level.
 	 * @since 3.1.2
 	 */
-	String value() default "";
+	String value() default "";//指定线程池的名称， 被注解标记的方法被提交到这个线程池中执行
 
 }
