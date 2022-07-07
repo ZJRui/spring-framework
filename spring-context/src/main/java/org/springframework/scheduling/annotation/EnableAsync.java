@@ -161,6 +161,31 @@ import org.springframework.core.Ordered;
 @Documented
 @Import(AsyncConfigurationSelector.class)
 public @interface EnableAsync {
+	/**
+	 * Base class for BeanPostProcessor implementations that apply a
+	 * Spring AOP Advisor to specific beans.
+	 *
+	 * 对特定bean应用Spring AOP Advisor的BeanPostProcessor实现的基类。
+	 *
+	 *
+	 * 我们知道  判断一个Bean是否需要被增强是在Bean 实例化之后， 在执行org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator#postProcessAfterInitialization(java.lang.Object, java.lang.String)
+	 * 的时候进行 wrapIfNecessary的判断。 这就要求我们首先需要开启AOP， 开启AOP之后会注入 aop的BeanPostProcessor，
+	 * 然后再bean 创建之后进行拦截 判断是否需要代理。
+	 *
+	 * 对于 @Async这个 标记方法异步执行的的实现是这样的：
+	 * （1）@EnableAsync 注解会通过 importSelector 导入一个配置ProxyAsyncConfiguration，
+	 * 这个配置类里面会注入一个AsyncAnnotationBeanPostProcessor， 这个beanPostprocessor的
+	 * org.springframework.scheduling.annotation.AsyncAnnotationBeanPostProcessor#setBeanFactory(org.springframework.beans.factory.BeanFactory)
+	 * 方法内部会创建Advisor 和pointcut,pointcut的判断条件就是判断 方法上是否存在@Async注解。
+	 * 然后在业务Bean 被创建后执行  AsyncAnnotationBeanPostProcessor的 postProcessAfterInitialization 的时候判断是否增强，生成代理
+	 * 我们要关注的是 AsyncAnnotationAdvisor中的advice ，这个advice就是 AnnotationAsyncExecutionInterceptor，他拦截到方法执行交给
+	 * 线程池执行
+	 *
+	 *
+	 *
+	 *
+	 */
+
 
 	/**
 	 * Indicate the 'async' annotation type to be detected at either class

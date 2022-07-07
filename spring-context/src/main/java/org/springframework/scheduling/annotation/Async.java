@@ -52,6 +52,44 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Async {
+	/**
+	 *
+	 * 将方法标记为异步执行候选方法的注释。也可以在类型级别使用，在这种情况下，类型的所有方法都被认为是异步的。
+	 * 就目标方法签名而言，支持任何参数类型。但是，返回类型被限制为void或java.util.concurrent.Future。
+	 * 在后一种情况下，你可以声明更具体的org.springframework.util.concurrent.ListenableFuture
+	 * 或java.util.concurrent.CompletableFuture类型，
+	 * 它们允许与异步任务进行更丰富的交互，并与进一步的处理步骤进行即时组合。
+	 * 从代理返回的Future句柄将是一个实际的异步Future，可用于跟踪异步方法执行的结果。
+	 * 然而，由于目标方法需要实现相同的签名，它将不得不返回一个临时的Future句柄
+	 * ，只传递一个值:例如Spring的AsyncResult, EJB 3.1的javax.ejb。AsyncResult
+	 * 或java.util.concurrent.CompletableFuture.completedFuture(对象)。
+	 *
+	 *
+	 */
+/**
+ * Base class for BeanPostProcessor implementations that apply a
+ * Spring AOP Advisor to specific beans.
+ *
+ * 对特定bean应用Spring AOP Advisor的BeanPostProcessor实现的基类。
+ *
+ *
+ * 我们知道  判断一个Bean是否需要被增强是在Bean 实例化之后， 在执行org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator#postProcessAfterInitialization(java.lang.Object, java.lang.String)
+ * 的时候进行 wrapIfNecessary的判断。 这就要求我们首先需要开启AOP， 开启AOP之后会注入 aop的BeanPostProcessor，
+ * 然后再bean 创建之后进行拦截 判断是否需要代理。
+ *
+ * 对于 @Async这个 标记方法异步执行的的实现是这样的：
+ * （1）@EnableAsync 注解会通过 importSelector 导入一个配置ProxyAsyncConfiguration，
+ * 这个配置类里面会注入一个AsyncAnnotationBeanPostProcessor， 这个beanPostprocessor的
+ * org.springframework.scheduling.annotation.AsyncAnnotationBeanPostProcessor#setBeanFactory(org.springframework.beans.factory.BeanFactory)
+ * 方法内部会创建Advisor 和pointcut,pointcut的判断条件就是判断 方法上是否存在@Async注解。
+ * 然后在业务Bean 被创建后执行  AsyncAnnotationBeanPostProcessor的 postProcessAfterInitialization 的时候判断是否增强，生成代理
+ * 我们要关注的是 AsyncAnnotationAdvisor中的advice ，这个advice就是 AnnotationAsyncExecutionInterceptor，他拦截到方法执行交给
+ * 线程池执行
+ *
+ *
+ *
+ *
+ */
 
 	/**
 	 * A qualifier value for the specified asynchronous operation(s).

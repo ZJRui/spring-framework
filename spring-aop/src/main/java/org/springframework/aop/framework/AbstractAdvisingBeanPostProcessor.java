@@ -32,7 +32,32 @@ import org.springframework.lang.Nullable;
  * @since 3.2
  */
 @SuppressWarnings("serial")
+@SuppressWarnings("all")
 public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSupport implements BeanPostProcessor {
+	/**
+	 * Base class for BeanPostProcessor implementations that apply a
+	 * Spring AOP Advisor to specific beans.
+	 *
+	 * 对特定bean应用Spring AOP Advisor的BeanPostProcessor实现的基类。
+	 *
+	 *
+	 * 我们知道  判断一个Bean是否需要被增强是在Bean 实例化之后， 在执行org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator#postProcessAfterInitialization(java.lang.Object, java.lang.String)
+	 * 的时候进行 wrapIfNecessary的判断。 这就要求我们首先需要开启AOP， 开启AOP之后会注入 aop的BeanPostProcessor，
+	 * 然后再bean 创建之后进行拦截 判断是否需要代理。
+	 *
+	 * 对于 @Async这个 标记方法异步执行的的实现是这样的：
+	 * （1）@EnableAsync 注解会通过 importSelector 导入一个配置ProxyAsyncConfiguration，
+	 * 这个配置类里面会注入一个AsyncAnnotationBeanPostProcessor， 这个beanPostprocessor的
+	 * org.springframework.scheduling.annotation.AsyncAnnotationBeanPostProcessor#setBeanFactory(org.springframework.beans.factory.BeanFactory)
+	 * 方法内部会创建Advisor 和pointcut,pointcut的判断条件就是判断 方法上是否存在@Async注解。
+	 * 然后在业务Bean 被创建后执行  AsyncAnnotationBeanPostProcessor的 postProcessAfterInitialization 的时候判断是否增强，生成代理
+	 * 我们要关注的是 AsyncAnnotationAdvisor中的advice ，这个advice就是 AnnotationAsyncExecutionInterceptor，他拦截到方法执行交给
+	 * 线程池执行
+	 *
+	 *
+	 *
+	 *
+	 */
 
 	@Nullable
 	protected Advisor advisor;
@@ -52,6 +77,12 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 	 * changes this flag by default, depending on the nature of its advisor.
 	 */
 	public void setBeforeExistingAdvisors(boolean beforeExistingAdvisors) {
+		/**
+		 * 设置当遇到预先通知的对象时，是否应该在现有的建议程序之前应用此后处理器的建议程序。
+		 * 默认为“false”，将advisor应用在现有advisor之后，即尽可能接近目标方法。
+		 * 将它切换为“true”，以便这个后处理器的顾问也可以包装现有的顾问。
+		 * 注意:检查具体的后处理器的javadoc是否可能在默认情况下改变这个标志，这取决于它的顾问的性质。
+		 */
 		this.beforeExistingAdvisors = beforeExistingAdvisors;
 	}
 
@@ -82,6 +113,14 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 			}
 		}
 
+		/**
+		 * 判断bean是否是被被 aop，也就是判断 poincut是否可以应用
+		 * 	eligible = AopUtils.canApply(this.advisor, targetClass);
+		 *
+		 *
+		 * 	参考： org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator
+		 * 	#postProcessAfterInitialization(java.lang.Object, java.lang.String)--->wrapIfNecessary
+		 */
 		if (isEligible(bean, beanName)) {
 			ProxyFactory proxyFactory = prepareProxyFactory(bean, beanName);
 			if (!proxyFactory.isProxyTargetClass()) {
@@ -112,6 +151,18 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 	 * @see #isEligible(Class)
 	 */
 	protected boolean isEligible(Object bean, String beanName) {
+
+		/**
+		 *  isEligible: 符合条件
+		 * 检查给定bean是否有资格使用此后处理器的Advisor提供建议。
+		 * 委托isEligible(Class)用于目标类检查。可以被重写，例如通过名字来排除特定的bean。
+		 * 注意:只调用常规bean实例，不调用实现advise并允许将本地Advisor添加到现有代理的
+		 * Advisor链的现有代理实例。对于后者，直接调用isEligible(Class)，使用现有代理后
+		 * 面的实际目标类(由AopUtils.getTargetClass(Object)确定)。
+		 *
+		 *
+		 *
+		 */
 		return isEligible(bean.getClass());
 	}
 

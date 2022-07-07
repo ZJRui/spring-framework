@@ -276,6 +276,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
+			//如果是基础组件，或者应该跳过
+			//如果允许跳过或者是基础组件 则会被放入到advisedbeans中。否则将不会放入到advisedBeans中。
+			//因此这里我们得出结论： advisedBeans中存放的是 基础AOP组件以及应该被跳过的Bean。
 			/**
 			 * isInfrastructureClass方法会 查找Annotation
 			 *

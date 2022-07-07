@@ -57,6 +57,9 @@ public interface BeanPostProcessor {
 	 */
 	@Nullable
 	default Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		/**
+		 * 对象实例化之前不做处理
+		 */
 		return bean;
 	}
 
