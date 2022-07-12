@@ -76,6 +76,18 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 * entirely background role and has no relevance to the end-user. This hint is
 	 * used when registering beans that are completely part of the internal workings
 	 * of a {@link org.springframework.beans.factory.parsing.ComponentDefinition}.
+	 *
+	 *
+	 * -----
+	 * org.springframework.aop.framework.autoproxy.InfrastructureAdvisorAutoProxyCreator#isEligibleAdvisorBean(java.lang.String)
+	 * isEligibleAdvisorBean方法在aop中是用来判断 切面是否合格的，这里判断了beanDefinition的role属性是否为
+	 * BeanDefinition.ROLE_INFRASTRUCTURE，还记得上面我们介绍的registerOrEscalateApcAsRequired方法中
+	 *  //设置role为ROLE_INFRASTRUCTURE
+	 *  beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
+	 * 有这一行代码，设置beanDefinition的role就是BeanDefinition.ROLE_INFRASTRUCTURE，所以会触发AOP的功能。
+	 *
+	 * BeanDefinition的getRole方法,用于标识Bean的分类
+	 *
 	 */
 	int ROLE_INFRASTRUCTURE = 2;
 

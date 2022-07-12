@@ -81,6 +81,18 @@ import org.springframework.util.StringUtils;
  */
 @SuppressWarnings("serial")
 public class ResolvableType implements Serializable {
+	/**
+	 * 封装Java Type，提供对超类型、接口和泛型参数的访问，以及最终解析为Class的能力。
+	 * 可解析类型可以从字段、方法参数、方法返回值或类中获得。这个类的大多数方法本身将返回ResolvableTypes，
+	 * 允许轻松导航。例如:
+	 *
+	 *
+	 * 在JDK原生类库里面，Type总共有5种类型，分别是：原始类型、参数化类型、泛型数组类型、类型变量和通配符类型。这些类型相互间串起来操作的时候，就会出现一些问题。例如：
+	 *
+	 * 代码重复和繁长；
+	 * 对JDK的Type不熟悉的话，也容易出错。
+	 * 而坏味道的代码，总是容易让一些有洁癖的人无法忍受，并最终处理掉。最终，Spring里面的ResolvableType在Type的基础上，封装了我们常用的一些操作，使得我们对Java类型的操作变得更加简单。
+	 */
 
 	/**
 	 * {@code ResolvableType} returned when no value is available. {@code NONE} is used

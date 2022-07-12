@@ -32,6 +32,9 @@ import java.util.Set;
  * @see AnnotatedTypeMetadata
  */
 public interface AnnotationMetadata extends ClassMetadata, AnnotatedTypeMetadata {
+	/**
+	 * 接口，该接口定义了对特定类的注释的抽象访问，其形式不需要加载该类。
+	 */
 
 	/**
 	 * Get the fully qualified class names of all annotation types that
