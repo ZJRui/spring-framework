@@ -1,0 +1,908 @@
+
+ClassLoader:                                                                                                                                                                                                
++-sun.misc.Launcher$AppClassLoader@18b4aac2                                                                                                                                                                 
+  +-sun.misc.Launcher$ExtClassLoader@308f1c37                                                                                                                                                               
+
+Location:                                                                                                                                                                                                   
+/Users/dz0400847/sCode/springboot-demo/target/classes/                                                                                                                                                      
+
+/*
+ * Decompiled with CFR.
+ */
+package com.example.springbootdemo.aop;
+
+import com.example.springbootdemo.aop.HelloService$$EnhancerBySpringCGLIB$$47f21ac2;
+import java.lang.reflect.InvocationTargetException;
+import org.aopalliance.aop.Advice;
+import org.springframework.aop.Advisor;
+import org.springframework.aop.TargetSource;
+import org.springframework.cglib.core.Signature;
+import org.springframework.cglib.proxy.Callback;
+import org.springframework.cglib.reflect.FastClass;
+
+public class HelloService$$EnhancerBySpringCGLIB$$47f21ac2$$FastClassBySpringCGLIB$$7a77351d
+extends FastClass {
+    public HelloService$$EnhancerBySpringCGLIB$$47f21ac2$$FastClassBySpringCGLIB$$7a77351d(Class clazz) {
+        super(clazz);
+    }
+
+    @Override
+    public int getIndex(Signature signature) {
+        String string = ((Object)signature).toString();
+        switch (string.hashCode()) {
+            case -2103996935: {
+                if (!string.equals("isExposeProxy()Z")) break;
+                return 19;
+            }
+            case -1938347695: {
+                if (!string.equals("getTargetClass()Ljava/lang/Class;")) break;
+                return 1;
+            }
+            case -1891827894: {
+                if (!string.equals("getProxiedInterfaces()[Ljava/lang/Class;")) break;
+                return 2;
+            }
+            case -1887170608: {
+                if (!string.equals("getTargetSource()Lorg/springframework/aop/TargetSource;")) break;
+                return 0;
+            }
+            case -1882565338: {
+                if (!string.equals("CGLIB$equals$1(Ljava/lang/Object;)Z")) break;
+                return 40;
+            }
+            case -1870561232: {
+                if (!string.equals("CGLIB$findMethodProxy(Lorg/springframework/cglib/core/Signature;)Lorg/springframework/cglib/proxy/MethodProxy;")) break;
+                return 44;
+            }
+            case -1816210712: {
+                if (!string.equals("sayHello(Ljava/lang/String;)Ljava/lang/String;")) break;
+                return 31;
+            }
+            case -1745842178: {
+                if (!string.equals("setCallbacks([Lorg/springframework/cglib/proxy/Callback;)V")) break;
+                return 32;
+            }
+            case -1656914424: {
+                if (!string.equals("indexOf(Lorg/aopalliance/aop/Advice;)I")) break;
+                return 10;
+            }
+            case -1641413109: {
+                if (!string.equals("newInstance([Lorg/springframework/cglib/proxy/Callback;)Ljava/lang/Object;")) break;
+                return 13;
+            }
+            case -1457476106: {
+                if (!string.equals("CGLIB$STATICHOOK3()V")) break;
+                return 38;
+            }
+            case -1411842725: {
+                if (!string.equals("CGLIB$hashCode$3()I")) break;
+                return 42;
+            }
+            case -1378580207: {
+                if (!string.equals("toProxyConfigString()Ljava/lang/String;")) break;
+                return 30;
+            }
+            case -1127359161: {
+                if (!string.equals("setExposeProxy(Z)V")) break;
+                return 18;
+            }
+            case -1068101097: {
+                if (!string.equals("setPreFiltered(Z)V")) break;
+                return 20;
+            }
+            case -1034266769: {
+                if (!string.equals("CGLIB$SET_STATIC_CALLBACKS([Lorg/springframework/cglib/proxy/Callback;)V")) break;
+                return 33;
+            }
+            case -1025895669: {
+                if (!string.equals("CGLIB$SET_THREAD_CALLBACKS([Lorg/springframework/cglib/proxy/Callback;)V")) break;
+                return 34;
+            }
+            case -1012917840: {
+                if (!string.equals("addAdvice(ILorg/aopalliance/aop/Advice;)V")) break;
+                return 28;
+            }
+            case -1006102474: {
+                if (!string.equals("isProxyTargetClass()Z")) break;
+                return 16;
+            }
+            case -988317324: {
+                if (!string.equals("newInstance([Ljava/lang/Class;[Ljava/lang/Object;[Lorg/springframework/cglib/proxy/Callback;)Ljava/lang/Object;")) break;
+                return 12;
+            }
+            case -980141523: {
+                if (!string.equals("replaceAdvisor(Lorg/springframework/aop/Advisor;Lorg/springframework/aop/Advisor;)Z")) break;
+                return 26;
+            }
+            case -904152374: {
+                if (!string.equals("removeAdvisor(I)V")) break;
+                return 24;
+            }
+            case -872603166: {
+                if (!string.equals("removeAdvisor(Lorg/springframework/aop/Advisor;)Z")) break;
+                return 25;
+            }
+            case -552893142: {
+                if (!string.equals("addAdvisor(ILorg/springframework/aop/Advisor;)V")) break;
+                return 22;
+            }
+            case -508378822: {
+                if (!string.equals("clone()Ljava/lang/Object;")) break;
+                return 9;
+            }
+            case -439517399: {
+                if (!string.equals("isPreFiltered()Z")) break;
+                return 21;
+            }
+            case 103043491: {
+                if (!string.equals("getAdvisorCount()I")) break;
+                return 4;
+            }
+            case 187947380: {
+                if (!string.equals("setTargetSource(Lorg/springframework/aop/TargetSource;)V")) break;
+                return 17;
+            }
+            case 610042816: {
+                if (!string.equals("newInstance(Lorg/springframework/cglib/proxy/Callback;)Ljava/lang/Object;")) break;
+                return 14;
+            }
+            case 644726458: {
+                if (!string.equals("isInterfaceProxied(Ljava/lang/Class;)Z")) break;
+                return 3;
+            }
+            case 1132856532: {
+                if (!string.equals("getCallbacks()[Lorg/springframework/cglib/proxy/Callback;")) break;
+                return 36;
+            }
+            case 1238545150: {
+                if (!string.equals("indexOf(Lorg/springframework/aop/Advisor;)I")) break;
+                return 11;
+            }
+            case 1246779367: {
+                if (!string.equals("setCallback(ILorg/springframework/cglib/proxy/Callback;)V")) break;
+                return 37;
+            }
+            case 1298742135: {
+                if (!string.equals("CGLIB$sayHello$0(Ljava/lang/String;)Ljava/lang/String;")) break;
+                return 39;
+            }
+            case 1306468936: {
+                if (!string.equals("CGLIB$toString$2()Ljava/lang/String;")) break;
+                return 41;
+            }
+            case 1364367423: {
+                if (!string.equals("getCallback(I)Lorg/springframework/cglib/proxy/Callback;")) break;
+                return 35;
+            }
+            case 1426835813: {
+                if (!string.equals("addAdvice(Lorg/aopalliance/aop/Advice;)V")) break;
+                return 27;
+            }
+            case 1636583119: {
+                if (!string.equals("isFrozen()Z")) break;
+                return 15;
+            }
+            case 1744736673: {
+                if (!string.equals("addAdvisor(Lorg/springframework/aop/Advisor;)V")) break;
+                return 23;
+            }
+            case 1800494055: {
+                if (!string.equals("CGLIB$clone$4()Ljava/lang/Object;")) break;
+                return 43;
+            }
+            case 1826985398: {
+                if (!string.equals("equals(Ljava/lang/Object;)Z")) break;
+                return 6;
+            }
+            case 1913648695: {
+                if (!string.equals("toString()Ljava/lang/String;")) break;
+                return 7;
+            }
+            case 1984935277: {
+                if (!string.equals("hashCode()I")) break;
+                return 8;
+            }
+            case 2119600998: {
+                if (!string.equals("removeAdvice(Lorg/aopalliance/aop/Advice;)Z")) break;
+                return 29;
+            }
+            case 2122046924: {
+                if (!string.equals("getAdvisors()[Lorg/springframework/aop/Advisor;")) break;
+                return 5;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public int getIndex(String string, Class[] classArray) {
+        String string2 = string;
+        Class[] classArray2 = classArray;
+        block0 : switch (string2.hashCode()) {
+            case -2012993625: {
+                if (!string2.equals("sayHello")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("java.lang.String")) break block0;
+                        return 31;
+                    }
+                }
+                break;
+            }
+            case -1983192202: {
+                if (!string2.equals("CGLIB$sayHello$0")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("java.lang.String")) break block0;
+                        return 39;
+                    }
+                }
+                break;
+            }
+            case -1776922004: {
+                if (!string2.equals("toString")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 7;
+                    }
+                }
+                break;
+            }
+            case -1567161245: {
+                if (!string2.equals("isProxyTargetClass")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 16;
+                    }
+                }
+                break;
+            }
+            case -1383403876: {
+                if (!string2.equals("removeAdvice")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("org.aopalliance.aop.Advice")) break block0;
+                        return 29;
+                    }
+                }
+                break;
+            }
+            case -1295482945: {
+                if (!string2.equals("equals")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("java.lang.Object")) break block0;
+                        return 6;
+                    }
+                }
+                break;
+            }
+            case -1260627944: {
+                if (!string2.equals("setPreFiltered")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("boolean")) break block0;
+                        return 20;
+                    }
+                }
+                break;
+            }
+            case -1137093050: {
+                if (!string2.equals("toProxyConfigString")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 30;
+                    }
+                }
+                break;
+            }
+            case -1053468136: {
+                if (!string2.equals("getCallbacks")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 36;
+                    }
+                }
+                break;
+            }
+            case -592051094: {
+                if (!string2.equals("isFrozen")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 15;
+                    }
+                }
+                break;
+            }
+            case -560688532: {
+                if (!string2.equals("replaceAdvisor")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 2: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("org.springframework.aop.Advisor")) break block0;
+                        classArray2 = classArray2;
+                        if (!classArray2[1].getName().equals("org.springframework.aop.Advisor")) break block0;
+                        return 26;
+                    }
+                }
+                break;
+            }
+            case -529128199: {
+                if (!string2.equals("addAdvice")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("org.aopalliance.aop.Advice")) break block0;
+                        return 27;
+                    }
+                    case 2: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("int")) break block0;
+                        classArray2 = classArray2;
+                        if (!classArray2[1].getName().equals("org.aopalliance.aop.Advice")) break block0;
+                        return 28;
+                    }
+                }
+                break;
+            }
+            case -258655664: {
+                if (!string2.equals("isPreFiltered")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 21;
+                    }
+                }
+                break;
+            }
+            case -124978609: {
+                if (!string2.equals("CGLIB$equals$1")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("java.lang.Object")) break block0;
+                        return 40;
+                    }
+                }
+                break;
+            }
+            case -60403779: {
+                if (!string2.equals("CGLIB$SET_STATIC_CALLBACKS")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("[Lorg.springframework.cglib.proxy.Callback;")) break block0;
+                        return 33;
+                    }
+                }
+                break;
+            }
+            case -29025555: {
+                if (!string2.equals("CGLIB$hashCode$3")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 42;
+                    }
+                }
+                break;
+            }
+            case 64168604: {
+                if (!string2.equals("removeAdvisor")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        String string3 = classArray2[0].getName();
+                        switch (string3.hashCode()) {
+                            case 104431: {
+                                if (!string3.equals("int")) break block0;
+                                return 24;
+                            }
+                            case 554907597: {
+                                if (!string3.equals("org.springframework.aop.Advisor")) break block0;
+                                return 25;
+                            }
+                        }
+                        break block0;
+                    }
+                }
+                break;
+            }
+            case 71818497: {
+                if (!string2.equals("getProxiedInterfaces")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 2;
+                    }
+                }
+                break;
+            }
+            case 85179481: {
+                if (!string2.equals("CGLIB$SET_THREAD_CALLBACKS")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("[Lorg.springframework.cglib.proxy.Callback;")) break block0;
+                        return 34;
+                    }
+                }
+                break;
+            }
+            case 0x5A5DD5D: {
+                if (!string2.equals("clone")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 9;
+                    }
+                }
+                break;
+            }
+            case 147696667: {
+                if (!string2.equals("hashCode")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 8;
+                    }
+                }
+                break;
+            }
+            case 161998111: {
+                if (!string2.equals("CGLIB$STATICHOOK3")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 38;
+                    }
+                }
+                break;
+            }
+            case 232340296: {
+                if (!string2.equals("setExposeProxy")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("boolean")) break block0;
+                        return 18;
+                    }
+                }
+                break;
+            }
+            case 495524492: {
+                if (!string2.equals("setCallbacks")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("[Lorg.springframework.cglib.proxy.Callback;")) break block0;
+                        return 32;
+                    }
+                }
+                break;
+            }
+            case 776910815: {
+                if (!string2.equals("addAdvisor")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("org.springframework.aop.Advisor")) break block0;
+                        return 23;
+                    }
+                    case 2: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("int")) break block0;
+                        classArray2 = classArray2;
+                        if (!classArray2[1].getName().equals("org.springframework.aop.Advisor")) break block0;
+                        return 22;
+                    }
+                }
+                break;
+            }
+            case 811662670: {
+                if (!string2.equals("isInterfaceProxied")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("java.lang.Class")) break block0;
+                        return 3;
+                    }
+                }
+                break;
+            }
+            case 1055615909: {
+                if (!string2.equals("getAdvisorCount")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 4;
+                    }
+                }
+                break;
+            }
+            case 1081419650: {
+                if (!string2.equals("getTargetSource")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 0;
+                    }
+                }
+                break;
+            }
+            case 1154623345: {
+                if (!string2.equals("CGLIB$findMethodProxy")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("org.springframework.cglib.core.Signature")) break block0;
+                        return 44;
+                    }
+                }
+                break;
+            }
+            case 1234312576: {
+                if (!string2.equals("isExposeProxy")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 19;
+                    }
+                }
+                break;
+            }
+            case 1366611497: {
+                if (!string2.equals("getAdvisors")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 5;
+                    }
+                }
+                break;
+            }
+            case 1543336189: {
+                if (!string2.equals("CGLIB$toString$2")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 41;
+                    }
+                }
+                break;
+            }
+            case 1544020273: {
+                if (!string2.equals("getTargetClass")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 1;
+                    }
+                }
+                break;
+            }
+            case 1811874389: {
+                if (!string2.equals("newInstance")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        String string4 = classArray2[0].getName();
+                        switch (string4.hashCode()) {
+                            case -1997738671: {
+                                if (!string4.equals("[Lorg.springframework.cglib.proxy.Callback;")) break block0;
+                                return 13;
+                            }
+                            case 1364160985: {
+                                if (!string4.equals("org.springframework.cglib.proxy.Callback")) break block0;
+                                return 14;
+                            }
+                        }
+                        break block0;
+                    }
+                    case 3: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("[Ljava.lang.Class;")) break block0;
+                        classArray2 = classArray2;
+                        if (!classArray2[1].getName().equals("[Ljava.lang.Object;")) break block0;
+                        classArray2 = classArray2;
+                        if (!classArray2[2].getName().equals("[Lorg.springframework.cglib.proxy.Callback;")) break block0;
+                        return 12;
+                    }
+                }
+                break;
+            }
+            case 1817099975: {
+                if (!string2.equals("setCallback")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 2: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("int")) break block0;
+                        classArray2 = classArray2;
+                        if (!classArray2[1].getName().equals("org.springframework.cglib.proxy.Callback")) break block0;
+                        return 37;
+                    }
+                }
+                break;
+            }
+            case 1905679803: {
+                if (!string2.equals("getCallback")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("int")) break block0;
+                        return 35;
+                    }
+                }
+                break;
+            }
+            case 1943291465: {
+                if (!string2.equals("indexOf")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        String string5 = classArray2[0].getName();
+                        switch (string5.hashCode()) {
+                            case -201664093: {
+                                if (!string5.equals("org.aopalliance.aop.Advice")) break block0;
+                                return 10;
+                            }
+                            case 554907597: {
+                                if (!string5.equals("org.springframework.aop.Advisor")) break block0;
+                                return 11;
+                            }
+                        }
+                        break block0;
+                    }
+                }
+                break;
+            }
+            case 1951977610: {
+                if (!string2.equals("CGLIB$clone$4")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 0: {
+                        return 43;
+                    }
+                }
+                break;
+            }
+            case 1992172174: {
+                if (!string2.equals("setTargetSource")) break;
+                classArray2 = classArray2;
+                switch (classArray2.length) {
+                    case 1: {
+                        classArray2 = classArray2;
+                        if (!classArray2[0].getName().equals("org.springframework.aop.TargetSource")) break block0;
+                        return 17;
+                    }
+                }
+                break;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public int getIndex(Class[] classArray) {
+        Class[] classArray2 = classArray;
+        switch (classArray.length) {
+            case 0: {
+                return 0;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public Object invoke(int n, Object object, Object[] objectArray) throws InvocationTargetException {
+        HelloService$$EnhancerBySpringCGLIB$$47f21ac2 helloService$$EnhancerBySpringCGLIB$$47f21ac2 = (HelloService$$EnhancerBySpringCGLIB$$47f21ac2)object;
+        try {
+            switch (n) {
+                case 0: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.getTargetSource();
+                }
+                case 1: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.getTargetClass();
+                }
+                case 2: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.getProxiedInterfaces();
+                }
+                case 3: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.isInterfaceProxied((Class)objectArray[0]));
+                }
+                case 4: {
+                    return new Integer(helloService$$EnhancerBySpringCGLIB$$47f21ac2.getAdvisorCount());
+                }
+                case 5: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.getAdvisors();
+                }
+                case 6: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.equals(objectArray[0]));
+                }
+                case 7: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.toString();
+                }
+                case 8: {
+                    return new Integer(helloService$$EnhancerBySpringCGLIB$$47f21ac2.hashCode());
+                }
+                case 9: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.clone();
+                }
+                case 10: {
+                    return new Integer(helloService$$EnhancerBySpringCGLIB$$47f21ac2.indexOf((Advice)objectArray[0]));
+                }
+                case 11: {
+                    return new Integer(helloService$$EnhancerBySpringCGLIB$$47f21ac2.indexOf((Advisor)objectArray[0]));
+                }
+                case 12: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.newInstance((Class[])objectArray[0], (Object[])objectArray[1], (Callback[])objectArray[2]);
+                }
+                case 13: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.newInstance((Callback[])objectArray[0]);
+                }
+                case 14: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.newInstance((Callback)objectArray[0]);
+                }
+                case 15: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.isFrozen());
+                }
+                case 16: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.isProxyTargetClass());
+                }
+                case 17: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.setTargetSource((TargetSource)objectArray[0]);
+                    return null;
+                }
+                case 18: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.setExposeProxy((Boolean)objectArray[0]);
+                    return null;
+                }
+                case 19: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.isExposeProxy());
+                }
+                case 20: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.setPreFiltered((Boolean)objectArray[0]);
+                    return null;
+                }
+                case 21: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.isPreFiltered());
+                }
+                case 22: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.addAdvisor(((Number)objectArray[0]).intValue(), (Advisor)objectArray[1]);
+                    return null;
+                }
+                case 23: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.addAdvisor((Advisor)objectArray[0]);
+                    return null;
+                }
+                case 24: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.removeAdvisor(((Number)objectArray[0]).intValue());
+                    return null;
+                }
+                case 25: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.removeAdvisor((Advisor)objectArray[0]));
+                }
+                case 26: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.replaceAdvisor((Advisor)objectArray[0], (Advisor)objectArray[1]));
+                }
+                case 27: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.addAdvice((Advice)objectArray[0]);
+                    return null;
+                }
+                case 28: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.addAdvice(((Number)objectArray[0]).intValue(), (Advice)objectArray[1]);
+                    return null;
+                }
+                case 29: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.removeAdvice((Advice)objectArray[0]));
+                }
+                case 30: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.toProxyConfigString();
+                }
+                case 31: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.sayHello((String)objectArray[0]);
+                }
+                case 32: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.setCallbacks((Callback[])objectArray[0]);
+                    return null;
+                }
+                case 33: {
+                    HelloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$SET_STATIC_CALLBACKS((Callback[])objectArray[0]);
+                    return null;
+                }
+                case 34: {
+                    HelloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$SET_THREAD_CALLBACKS((Callback[])objectArray[0]);
+                    return null;
+                }
+                case 35: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.getCallback(((Number)objectArray[0]).intValue());
+                }
+                case 36: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.getCallbacks();
+                }
+                case 37: {
+                    helloService$$EnhancerBySpringCGLIB$$47f21ac2.setCallback(((Number)objectArray[0]).intValue(), (Callback)objectArray[1]);
+                    return null;
+                }
+                case 38: {
+                    HelloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$STATICHOOK3();
+                    return null;
+                }
+                case 39: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$sayHello$0((String)objectArray[0]);
+                }
+                case 40: {
+                    return new Boolean(helloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$equals$1(objectArray[0]));
+                }
+                case 41: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$toString$2();
+                }
+                case 42: {
+                    return new Integer(helloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$hashCode$3());
+                }
+                case 43: {
+                    return helloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$clone$4();
+                }
+                case 44: {
+                    return HelloService$$EnhancerBySpringCGLIB$$47f21ac2.CGLIB$findMethodProxy((Signature)objectArray[0]);
+                }
+            }
+        }
+        catch (Throwable throwable) {
+            throw new InvocationTargetException(throwable);
+        }
+        throw new IllegalArgumentException("Cannot find matching method/constructor");
+    }
+
+    @Override
+    public Object newInstance(int n, Object[] objectArray) throws InvocationTargetException {
+        try {
+            switch (n) {
+                case 0: {
+                    return new HelloService$$EnhancerBySpringCGLIB$$47f21ac2();
+                }
+            }
+        }
+        catch (Throwable throwable) {
+            throw new InvocationTargetException(throwable);
+        }
+        throw new IllegalArgumentException("Cannot find matching method/constructor");
+    }
+
+    @Override
+    public int getMaxIndex() {
+        return 44;
+    }
+}
+
+Affect(row-cnt:1) cost in 359 ms.

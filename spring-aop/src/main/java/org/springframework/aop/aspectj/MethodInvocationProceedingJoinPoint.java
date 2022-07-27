@@ -175,6 +175,8 @@ public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint,
 
 	/**
 	 * Lazily initialized MethodSignature.
+	 *
+	 *  MethodSignature 是  包 org.aspectj.lang.reflect 中的
 	 */
 	private class MethodSignatureImpl implements MethodSignature {
 

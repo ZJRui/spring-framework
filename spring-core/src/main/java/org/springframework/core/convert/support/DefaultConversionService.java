@@ -40,6 +40,9 @@ import org.springframework.lang.Nullable;
  */
 public class DefaultConversionService extends GenericConversionService {
 
+	/**
+	 * DefaultConversionService提供了默认情况下使用适用于大多数环境的转换器或者格式化服务，其addDefaultConverters源码如下：
+	 */
 	@Nullable
 	private static volatile DefaultConversionService sharedInstance;
 

@@ -51,6 +51,14 @@ import org.springframework.util.StringValueResolver;
 public class FormattingConversionService extends GenericConversionService
 		implements FormatterRegistry, EmbeddedValueResolverAware {
 
+	/**
+	 * DefaultFormattingConversionService的addDefaultFormatters可添加适用于大多数环境的格式化程序
+	 * ：包括数字格式化程序、JSR-354 货币和货币格式化程序、JSR-310 日期时间和/或 Joda-Time 格式化程序，
+	 * 具体取决于类路径中相应 API 的存在。
+	 *
+	 *
+	 * ————————————————
+	 */
 	@Nullable
 	private StringValueResolver embeddedValueResolver;
 

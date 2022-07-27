@@ -76,6 +76,9 @@ public class GenericConversionService implements ConfigurableConversionService {
 
 	private final Converters converters = new Converters();
 
+	/**
+	 * 使用一个 ConcurrentReferenceHashMap Spring封装的线程安全HashMap，作为缓存，可能会被垃圾回收，只做临时存储，默认Map长度 64。
+	 */
 	private final Map<ConverterCacheKey, GenericConverter> converterCache = new ConcurrentReferenceHashMap<>(64);
 
 

@@ -55,6 +55,7 @@ import org.springframework.util.ReflectionUtils;
  * @author Rob Harrop
  * @see org.springframework.aop.framework.AopProxyUtils
  */
+@SuppressWarnings("all")
 public abstract class AopUtils {
 
 	/**
@@ -187,11 +188,45 @@ public abstract class AopUtils {
 	 * @param method the method to be invoked, which may come from an interface
 	 * @param targetClass the target class for the current invocation.
 	 * May be {@code null} or may not even implement the method.
+	 *
+	 *   <p>
+	 * 给定一个方法(可能来自一个接口)和当前AOP调用中使用的目标类，如果有相应的目标方法，找到它。例如，方法可以是IFoo.bar()，
+	 * 目标类可以是DefaultFoo。在这种情况下，方法可能是DefaultFoo.bar()。这样就可以找到该方法的属性。
+	 * 注意:与ClassUtils相比。getMostSpecificMethod，该方法解析Java 5桥接方法，以便从原始方法定义中检索属性。
+	 *   </p>
+	 *
+	 *
 	 * @return the specific target method, or the original method if the
 	 * {@code targetClass} doesn't implement it or is {@code null}
+	 * <p>
+	 *     特定的目标方法，或者如果targetClass没有实现或为空，则为原始方法
+	 * </p>
 	 * @see org.springframework.util.ClassUtils#getMostSpecificMethod
 	 */
 	public static Method getMostSpecificMethod(Method method, @Nullable Class<?> targetClass) {
+		/**
+		 * (1)cglig 生成的代理类是 子类， 在cglib代理类中 会自动生成 重写 父类的方法，比如HelloService 中的sayHello 方法
+		 *         代理类： HelloService$$EnhancerBySpringCGLIB$$47f21ac2 中会获取 原始类中的方法的引用来保存，代理类的
+		 *
+		 *         clazz2 = Class.forName("com.example.springbootdemo.aop.HelloService");
+		 *         CGLIB$sayHello$0$Method = ReflectUtils.findMethods(new String[]{"sayHello", "(Ljava/lang/String;)Ljava/lang/String;"}, clazz2.getDeclaredMethods())[0];
+		 *
+		 *     同时代理类 也会生成  重写父类的sayhello 方法，在这个生成的方法中 执行拦截器 并调用 目标对象的sayello，参考  docs/cglib/ HelloService$$EnhancerBySpringCGLIB$$47f21ac2
+		 *
+		 *     joinpoint 中获取到的method 是 代理类的父类的 method，也就是helloService的method，而不是代理类的method
+		 *
+		 *  (2) 接口拦截的时候 拦截到的method是接口的method 还是 实现类的method：答案是接口中的抽象方法， 因为代理类是实现了接口的方法。
+		 *  代理类持有InvocationHandler，InvocationHandle持有目标对象，因此代理类感知不到目标对象的存在，代理类在实现的接口方法中会执行
+		 *  invocationHandler的invoke，传递给invoke的方法参数method 是 获取了接口类的method，而不是原始目标接口实现类的method。
+		 *  
+		 *         Signature signature = joinpoint.getSignature();
+		 *         MethodSignature methodSignature = (MethodSignature) signature;
+		 *         Method method = methodSignature.getMethod();
+		 *         System.out.println(method.getDeclaringClass().getName());
+		 *
+		 * Method：public abstract java.lang.String com.example.springbootdemo.aop.IHelloService.sayHello(java.lang.String)
+		 *
+		 */
 		Class<?> specificTargetClass = (targetClass != null ? ClassUtils.getUserClass(targetClass) : null);
 		Method resolvedMethod = ClassUtils.getMostSpecificMethod(method, specificTargetClass);
 		// If we are dealing with method with generic parameters, find the original method.
