@@ -34,6 +34,10 @@ import org.springframework.core.annotation.AliasFor;
  * <p>As of Spring Framework 4.0, this annotation may be used as a
  * <em>meta-annotation</em> to create custom <em>composed annotations</em>.
  *
+ * <p>
+ *     ActiveProfiles是一个类级别的注释，用于声明在为测试类加载ApplicationContext时应该使用哪些活动bean定义配置文件。
+ * 在Spring Framework 4.0中，这个注释可以作为元注释来创建自定义的组合注释。
+ * </p>
  * @author Sam Brannen
  * @since 3.1
  * @see SmartContextLoader
@@ -110,6 +114,13 @@ public @interface ActiveProfiles {
 	 * @see ContextConfiguration#locations
 	 * @see ContextConfiguration#classes
 	 * @see ContextConfiguration#inheritLocations
+	 *
+	 * <p>
+	 *     是否应该继承超类的bean定义概要文件。
+	 * 默认值为true，这意味着测试类将继承测试超类定义的bean定义概要。具体来说，测试类的bean定义概要文件将被附加到测试超类定义的bean定义概要文件列表中。因此，子类可以选择扩展bean定义概要文件列表。
+	 * 如果inheritProfiles设置为false，测试类的bean定义配置文件将隐藏并有效地替换由超类定义的任何bean定义配置文件。
+	 * 在下面的例子中，BaseTest的ApplicationContext将只使用“基础”bean定义概要文件来加载;因此，在“扩展”概要文件中定义的bean将不会被加载。相反，ExtendedTest的ApplicationContext将使用“基本”和“扩展”bean定义概要文件来加载。
+	 * </p>
 	 */
 	boolean inheritProfiles() default true;
 
