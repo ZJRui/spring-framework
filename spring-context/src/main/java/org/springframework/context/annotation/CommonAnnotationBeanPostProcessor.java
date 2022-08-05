@@ -155,7 +155,7 @@ import org.springframework.util.StringValueResolver;
  * @see org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor
  * @see org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor
  */
-@SuppressWarnings("serial")
+@SuppressWarnings("all")
 public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBeanPostProcessor
 		implements InstantiationAwareBeanPostProcessor, BeanFactoryAware, Serializable {
 
@@ -478,6 +478,15 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			}
 			@Override
 			public Object getTarget() {
+				/**
+				 * getTarge 是说获取原始的 目标对象， 什么时候会获取原始的目标对象呢
+				 * 举个例子：在拦截器
+				 * org.springframework.aop.framework.CglibAopProxy.DynamicUnadvisedInterceptor#intercept(java.lang.Object, java.lang.reflect.Method, java.lang.Object[], org.springframework.cglib.proxy.MethodProxy)
+				 * 中 在执行被拦截的方法前会 先执行
+				 * 			Object target = this.targetSource.getTarget();
+				 * 	目的就是为了触发 目标对象的生成
+				 * 	JDK动态代理的拦截器中 也是同样的道理：org.springframework.aop.framework.JdkDynamicAopProxy#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
+				 */
 				return getResource(element, requestingBeanName);
 			}
 			@Override
