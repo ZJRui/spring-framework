@@ -462,6 +462,11 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 	 * @see Lazy
 	 */
 	protected Object buildLazyResourceProxy(final LookupElement element, final @Nullable String requestingBeanName) {
+		/**
+		 *
+		 * 如果开启了懒加载模式 则返回代理对象 @Lazy
+		 *
+		 */
 		TargetSource ts = new TargetSource() {
 			@Override
 			public Class<?> getTargetClass() {
