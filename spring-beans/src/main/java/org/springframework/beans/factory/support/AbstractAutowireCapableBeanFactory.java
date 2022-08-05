@@ -118,6 +118,7 @@ import org.springframework.util.StringUtils;
  * @see DefaultListableBeanFactory
  * @see BeanDefinitionRegistry
  */
+@SuppressWarnings("all")
 public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFactory
 		implements AutowireCapableBeanFactory {
 
@@ -1440,6 +1441,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		 *
 		 * 而不是说给Bean填充所有的属性，不再md中的属性 并不会被设置。
 		 *
+		 * -------
+		 *
+		 *
 		 */
 		PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
 
@@ -1482,12 +1486,39 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
 					/**
 					 * CommonAnnotationBeanPostProcessor执行 对属性进行注入
+					 *
+					 * 问题： 如何确定有哪些属性需要注入。 比如Dubbo中的@Reference是需要注入的属性， 那么Spring
+					 * 是如何判断 被@Reference标记的属性是需要注入的呢.
+					 *
+					 *
+					 * 我们都知道 BeanPostProcessor的postProcessPropertyValues 方法是用来处理Bean的属性的
+					 * 但是如何确定这个Bean有哪些属性需要处理呢？
+					 *
 					 */
 					PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
 					if (pvsToUse == null) {
 						if (filteredPds == null) {
 							filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
 						}
+						/**
+						 *
+						 * 1.Bean对象被创建之后 会对属性进行填充。 属性分为两种类型（1）BeanDefinition中定义的属性，可以通过pvs = mbd.getPropertyValues();
+						 * 获得 （2）类中@Value  @Autowired  @Reference(dubbo) 注解的属性。
+						 *
+						 * 如果BeanDefinition中没有getPropertyValues（比如xml定义Bean 可以通过<propertyValue>标签定义属性）
+						 * 那么这里的pvs对象中的PropertyValue[] 就是一个空数组。
+						 *
+						 * 在dubbo的@Reference注解处理类  ReferenceAnnotationBeanP
+						 * ostProcessor的postProcessPropertyValues 方法中
+						 * 会根据BeanClass解析 beanclass中的属性 Field 来进行属性配置。 而不是 依赖这里的pvs
+						 *
+						 *
+						 *
+						 * 也就是说 postProcessPropertyValues 方法不是针对 BeanClass 中的属性Field进行处理的。他提供的针对的是 BeanDefinition中的
+						 * PropertyValue。 在这个时机 我们可以 分析BeanClass 中的Filed属性，然后实现对Field的注入。
+						 *
+						 *
+						 */
 						pvsToUse = ibp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
 						if (pvsToUse == null) {
 							return;
