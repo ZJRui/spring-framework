@@ -57,6 +57,91 @@ import org.springframework.lang.Nullable;
  */
 public interface ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
 		MessageSource, ApplicationEventPublisher, ResourcePatternResolver {
+	/**
+	 *
+	 * 1. spring 为什么可以直接@Autowired ApplicationContext
+	 * https://www.cnblogs.com/emanlee/p/15759135.html
+	 *
+	 * //ERROR No qualifying bean of type 'org.springframework.context.ApplicationContext' available
+	 * applicationContext.getBean(ApplicationContext.class);
+	 *
+	 * //SUCCESS
+	 * @Component
+	 * public class SimpleBean3 {
+	 *     @Autowired
+	 *     private ApplicationContext applicationContext;
+	 *     @Autowired
+	 *     private SimpleBean2 simpleBean2;
+	 * }
+	 * 复制代码
+	 *
+	 *
+	 * ApplicationContext是Spring中的重要组件,它不是bean,因此无法通过getBean获取它,但是可以通过Autowired注入获得,其中必定有特殊的处理。
+	 *
+	 * 普通Bean的元数据存放在DefaultListableBeanFactory的beanDefinitionNames和beanDefinitionMap,普通Bean通过遵照Spring提供的机制自动注册添加,这是Spring提供的功能。
+	 *
+	 *
+	 * private volatile List<String> beanDefinitionNames = new ArrayList<>(256);
+	 * private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
+	 *
+	 * ApplicationContext和BeanFactory存储在DefaultListableBeanFactory的resolvableDependencies,它们需要手动注册添加,这是Spring的框架内部逻辑
+	 *
+	 *
+	 * private final Map<Class<?>, Object> resolvableDependencies = new ConcurrentHashMap<>(16);
+	 *
+	 * 在查找依赖时,会同时搜寻beanDefinitionNames和resolvableDependencies,因此ApplicationContext也能被查找到。
+	 *
+	 * 而getBean时只会查找上面的BeanDefinitionMap,因此找不到ApplicationContext。
+	 *
+	 *
+	 *
+	 * 注入流程
+	 * 注册 ApplicationContext 为 resolvableDependencies
+	 *
+	 * 在 AbstractApplicationContext.prepareBeanFactory() 中, ApplicationContext 被注册到 resolvableDependencies 中。
+	 *
+	 * 复制代码
+	 * protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+	 *         //...忽略部分代码
+	 *
+	 *         // BeanFactory interface not registered as resolvable type in a plain factory.
+	 *         // MessageSource registered (and found for autowiring) as a bean.
+	 *         beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
+	 *         beanFactory.registerResolvableDependency(ResourceLoader.class, this);
+	 *         beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
+	 *         beanFactory.registerResolvableDependency(ApplicationContext.class, this);
+	 *         //...忽略部分代码
+	 *     }
+	 * 复制代码
+	 *
+	 * 生成Bean时查找依赖
+	 *
+	 *
+	 *
+	 * 带有 @Autowired 字段的在 AutowiredAnnotationPostProcessor.postProcessProperties() 中完成注入,查找依赖的入口就在 metadata.inject(bean, beanName, pvs)
+	 *
+	 * 复制代码
+	 *     public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
+	 *         InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
+	 *         try {
+	 *             //### 注入 ###
+	 *             metadata.inject(bean, beanName, pvs);
+	 *         }
+	 *         catch (BeanCreationException ex) {
+	 *             throw ex;
+	 *         }
+	 *         catch (Throwable ex) {
+	 *             throw new BeanCreationException(beanName, "Injection of autowired dependencies failed", ex);
+	 *         }
+	 *         return pvs;
+	 *     }
+	 * 复制代码
+	 *
+	 *
+	 *
+	 *
+	 *
+	 */
 
 	/**
 	 * Return the unique id of this application context.
