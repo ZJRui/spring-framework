@@ -65,6 +65,28 @@ package org.springframework.context;
  * @see ConfigurableApplicationContext
  */
 public interface SmartLifecycle extends Lifecycle, Phased {
+	/**
+	 * SmartLifecycle 是一个接口。当Spring容器加载所有bean并完成初始化之后，
+	 * 会接着回调实现该接口的类中对应的方法（start()方法）。
+	 *
+	 * Lifecycle 接口的扩展，用于那些需要在 ApplicationContext 以特定顺序刷新和/或关闭时启动的对象。
+	 * isAutoStartup() 返回值指示是否应在上下文刷新时启动此对象。 接受回调的 stop(Runnable) 方法对于具有异步关闭过程的对象很有用。
+	 * 此接口的任何实现都必须在关闭完成时调用回调的 run() 方法，以避免在整个 ApplicationContext 关闭过程中出现不必要的延迟。
+	 * 该接口扩展了 Phased，getPhase() 方法的返回值指示该 Lifecycle 组件应启动和停止的阶段。 启动过程从最低的相位值开始，
+	 * 到最高的相位值结束（Integer.MIN_VALUE 是最低的，Integer.MAX_VALUE 是最高的）。 关闭过程将应用相反的顺序。
+	 * 具有相同值的任何组件将在同一相内任意排序。
+	 * 示例：如果组件 B 依赖于组件 A 已经启动，则组件 A 的相位值应低于组件 B。在关闭过程中，组件 B 将先于组件 A 停止。
+	 * 任何明确的“依赖”关系都将优先于阶段顺序，以便依赖 bean 始终在其依赖之后启动并始终在其依赖之前停止。
+	 *
+	 * 上下文中任何未实现 SmartLifecycle 的生命周期组件都将被视为相位值为 0。如果 SmartLifecycle 组件具有负相位值，
+	 * 这允许 SmartLifecycle 组件在这些生命周期组件之前启动，或者 SmartLifecycle 组件 如果 SmartLifecycle 组件具有正相位值，
+	 * 则可能会在这些 Lifecycle 组件之后启动。
+	 * 请注意，由于 SmartLifecycle 中的自动启动支持，SmartLifecycle bean 实例通常会在任何情况下在应用程序上下文启动时进行初始化。
+	 * 因此，bean 定义的 lazy-init 标志对 SmartLifecycle bean 的实际影响非常有限。
+	 * 自从：
+	 * 3.0
+	 *
+	 */
 
 	/**
 	 * The default phase for {@code SmartLifecycle}: {@code Integer.MAX_VALUE}.

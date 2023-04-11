@@ -598,6 +598,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			 *
 			 * org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator#getEarlyBeanReference(java.lang.Object, java.lang.String)
 			 *
+			 * 问题：循环依赖的处理方案就是 实例化bean之后，populate属性之前，创建Bean的ObjectFactory对象进行提早曝光。 提早曝光的方式有很多，直接将
+			 * 对象缓存在一个地方就可以了，为什么 还需要 使用ObjectFactory的形式进行曝光呢？ 假设你现在创建了一个ServiceA对象，但是这个serviceA对象
+			 * 有增强逻辑，所以他在容器中存在的形式不是直接的ServiceA对象，而是代理对象， 这个地方仅仅是 持有了ServiceA对象，尚未对ServiceA创建代理对象。
+			 * 那么ServiceB在引用ServiceA的时候 引用的不应该是ServiceA对象，而是ServiceA的代理对象，因此 我们不能直接暴漏ServiceA对象，而是以ObjectFactory
+			 * 的形式暴漏，然后在ObjectService中会考虑是否创建代理
+			 *
 			 */
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
